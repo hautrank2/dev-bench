@@ -1,0 +1,11 @@
+node_modules/
+dist/
+dist-electron/
+release/
+coverage/
+.test-artifacts/
+*.log
+.env*
+!.env.example
+
+dist-server/

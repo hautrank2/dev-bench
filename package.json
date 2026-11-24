@@ -1,0 +1,104 @@
+{
+  "name": "dev-bench",
+  "version": "1.1.3",
+  "private": true,
+  "description": "Local development workspaces with per-machine configuration backups",
+  "author": "Dev Bench",
+  "license": "UNLICENSED",
+  "type": "module",
+  "main": "dist-electron/main.cjs",
+  "packageManager": "pnpm@10.4.1",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "pnpm build && node scripts/smoke-electron.mjs",
+    "build": "pnpm typecheck && vite build && node scripts/build-electron.mjs",
+    "dist:win": "pnpm build && electron-builder --win nsis --x64 --publish never",
+    "pack:win": "pnpm build && electron-builder --win --dir --x64 --publish never",
+    "format": "prettier --write .",
+    "server:dev": "tsx --env-file=server/.env server/main.ts",
+    "build:server": "node scripts/build-server.mjs",
+    "server:start": "node --env-file=server/.env dist-server/main.mjs",
+    "dist:mac": "pnpm build && electron-builder --mac dmg zip --arm64 --x64 --publish never",
+    "test:cloud-e2e": "pnpm build && tsx scripts/smoke-cloud.mts"
+  },
+  "dependencies": {
+    "@fastify/rate-limit": "^11.3.0",
+    "@fontsource/be-vietnam-pro": "^5.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
+    "@hookform/resolvers": "^5.2.2",
+    "@tanstack/react-query": "^5.90.0",
+    "@tanstack/react-router": "^1.140.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "fastify": "^5.12.8",
+    "google-auth-library": "^11.3.4",
+    "lucide-react": "^0.468.0",
+    "mongodb": "^7.9.1",
+    "radix-ui": "^1.4.3",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-hook-form": "^7.62.0",
+    "sonner": "^2.0.7",
+    "tailwind-merge": "^3.3.1",
+    "zod": "^4.1.11"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.13",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "electron": "^45.4.1",
+    "electron-builder": "^26.0.12",
+    "esbuild": "^0.25.0",
+    "jsdom": "^26.1.0",
+    "mongodb-memory-server": "^11.4.0",
+    "playwright": "^1.55.1",
+    "prettier": "^3.6.2",
+    "tailwindcss": "^4.1.13",
+    "tsx": "^4.23.15",
+    "tw-animate-css": "^1.3.0",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.0",
+    "vitest": "^3.2.4"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "electron",
+      "esbuild"
+    ]
+  },
+  "build": {
+    "appId": "com.devbench.desktop",
+    "productName": "Dev Bench",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "package.json",
+      "!node_modules/**/*",
+      "docs/licenses/**/*"
+    ],
+    "asar": true,
+    "win": {
+      "target": "nsis",
+      "signExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "Dev-Bench-Setup-${version}.${ext}"
+    },
+    "mac": {
+      "artifactName": "Dev-Bench-${version}-${arch}.${ext}",
+      "category": "public.app-category.developer-tools"
+    }
+  }
+}

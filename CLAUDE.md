@@ -1,0 +1,99 @@
+# Global Rules — Dev Bench
+
+Desktop dashboard for local projects and per-machine configuration backups.
+Source of truth: dev-bench-spec.md plus latest docs/product-model.md.
+UI labels/errors/toasts are English;
+communication and delivery documentation are Vietnamese.
+
+@docs/rules/source-code-rule.md
+@docs/rules/complex-component-rule.md
+
+## Stack and structure
+
+- Electron + React 19 + Vite + TypeScript strict + Tailwind CSS v4.
+- shadcn/ui on Radix, lucide-react, React Hook Form + Zod.
+- pnpm only. TanStack Query for IPC data, TanStack Router for navigation,
+  React Context for shared settings. No Zustand or MUI.
+- electron/: main, preload, IPC and OS/Git/process/config services.
+- shared/: Zod contracts, schemas and inferred types across processes.
+- src/routes/: dashboard and its _components; complex components use
+  index.tsx, hook.ts, type.ts. src/components/ui/: shadcn primitives.
+- src/api/api-list/: typed renderer action functions via preload bridge.
+- src/providers/, src/lib/, src/types/, src/utils/: shared code.
+- tests/: isolated integration fixtures. docs/: setup and verification.
+
+## Adaptations of imported reusable rules
+
+- Vite/Electron, not Next.js: no Server Components, App Router or use client.
+- `server/` owns Google sign-in and MongoDB backup APIs. OAuth, network and
+  encrypted session storage belong in Electron main. Renderer uses IPC.
+  Never ship MongoDB credentials in the desktop app.
+- Internal aliases: ~/ for src/, @shared/ for shared/.
+- Renderer uses typed action-specific IPC instead of axios/httpClient.
+  No renderer filesystem, process, shell or generic IPC access.
+- Shared main/renderer types live in shared/; UI shared types in src/types/.
+  Component schemas and all props in type.ts.
+- Reuse primitives from front-end-origin after inspecting dependencies.
+  This permits adapting existing shadcn components rather than downloading
+  equivalents. Use Radix consistently, not Base UI props.
+- Body font 14px; headings use src/typoset.css inside @layer base.
+- Theme: latest supplied dashboard reference, pale gray canvas, solid white
+  sidebar/cards, soft rounded corners and restrained shadows. Dark uses
+  neutral slate surfaces. NestJS primary #f23551 in both modes; a deeper
+  rose gradient may highlight the first dashboard statistic.
+  Be Vietnam Pro includes Vietnamese glyphs. System/light/dark modes;
+  migrate blueDark to dark. One sidebar dropdown shows the current mode;
+  no separate Themes/mode navigation. Sidebar collapses to an icon rail and
+  remembers its state. Settings retains independent terminal/log palettes.
+  Layout: full-height sidebar owns the brand; content column owns header
+  and scrolling body. Collapse/expand control belongs in the header.
+  Header remains 50px; no header theme toggle.
+- Local .claude/rules replace source-project details and conflicting rules.
+
+## Domain and boundaries
+
+- Stable project ID; JSON configuration in Electron userData, validated and
+  atomically written. Persist configuration only, never process state.
+- Multiple named sets per device; explicit cloud snapshots per Google
+  account and source machine. No remote execution or automatic overwrites.
+  Restore creates a new local set, checks schema, never runs commands.
+- Hierarchy: account -> device project set -> project -> repositories/services.
+  A project is a group (OpsDesk); client/server/mobile/broker each have their
+  own folder, command, URL, process and Git checkout. Runtime/Git actions
+  target repository IDs; group actions aggregate results without merging Git.
+- Sidebar: Dashboard, expandable Projects, Processes, Ports, Stats,
+  Utilities, read-only Hosts, Config Files, Settings. Project list has saved
+  Card/Table modes. Only expose implemented navigation, no placeholder tools.
+- Sessions are per-device; token encrypted in main, only hash on server.
+  Server reads/writes are always scoped to the authenticated account.
+- Offline export/import; migrate JSON v1. Terminal/stop have OS adapters.
+  macOS packaging/testing requires macOS; never claim checks not run.
+- Main resolves saved project by ID for each action. Validate IPC input and
+  sender; context isolation, sandbox on, Node integration off.
+- Windows shell commands have separate cwd; support pnpm.cmd.
+  Stop only dashboard-owned process trees. Running means live process,
+  not HTTP readiness. Per-project lock covers Run and Run All.
+- Serialize Git writes per actual checkout. Git argv are separate strings.
+  Preserve hooks, staged data, Unicode paths/messages and authentication.
+- Pull fast-forward only. Push HEAD to resolved upstream, never force.
+  Show final staged list before commit; refresh on failure, retain message.
+  Never automatically stage/commit/pull/push real projects.
+- Quit with live owned processes offers Stop All and Quit / Cancel.
+- Missing tools, moved folders and errors remain visible and recoverable.
+
+## Verification
+
+- pnpm typecheck, pnpm test, pnpm build before claiming completion.
+- pnpm dist:win creates NSIS installer. Never invent passing checks.
+- Git tests use temporary repositories and bare remotes only.
+- Record actual Windows checks and outstanding manual installed-app checks
+  in docs/verification.md. Build success is not installation verification.
+- No secrets, runtime user configuration or machine paths in bundles.
+
+## Agent behaviour
+
+- Outline multi-file work before editing. IMPLEMENTATION_PLAN.md is the
+  current plan; proceed with the user's request without a separate plan gate.
+- Complete authorized implementation and appropriate checks autonomously.
+- Ask only for information that cannot be inferred/read locally.
+- Report changes, checks and remaining limits concisely.

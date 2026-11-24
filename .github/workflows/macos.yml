@@ -1,0 +1,29 @@
+name: macOS validation
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+jobs:
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.4.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm exec vitest run tests/config.test.ts tests/workspace.test.ts tests/git.test.ts tests/project-form.test.tsx
+      - run: pnpm dist:mac
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dev-bench-macos
+          path: |
+            release/*.dmg
+            release/*.zip
