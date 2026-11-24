@@ -3,6 +3,7 @@ import { contextBridge, ipcRenderer } from "electron";
 import type { DesktopApi } from "../shared/contracts";
 
 const api: DesktopApi = {
+  setLanguage: (language) => ipcRenderer.invoke("settings:language", language),
   saveGroup: (input) => ipcRenderer.invoke("groups:save", input),
   runGroup: (id) => ipcRenderer.invoke("groups:run", id),
   stopGroup: (id) => ipcRenderer.invoke("groups:stop", id),

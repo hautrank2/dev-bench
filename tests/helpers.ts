@@ -27,7 +27,7 @@ export const gitCommand = (folder: string, ...args: string[]) =>
 export const initRepo = async (folder: string) => {
   await gitCommand(folder, "init", "-b", "main");
   await gitCommand(folder, "config", "user.email", "test@devbench.local");
-  await gitCommand(folder, "config", "user.name", "Dev Bench Test");
+  await gitCommand(folder, "config", "user.name", "DevBench Test");
   await gitCommand(folder, "config", "commit.gpgsign", "false");
   await gitCommand(folder, "config", "core.autocrlf", "false");
   await writeFile(path.join(folder, "initial.txt"), "initial\n");

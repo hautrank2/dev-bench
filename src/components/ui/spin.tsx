@@ -1,4 +1,5 @@
 import { cn } from "~/lib/utils";
+import { useLocale } from "~/providers/locale/context";
 
 export type SpinProps = {
   className?: string;
@@ -32,6 +33,7 @@ export const Spin = ({
   value,
   style,
 }: SpinProps) => {
+  const { t } = useLocale();
   const border = thickness ?? Math.max(2, Math.round(size * 0.09));
 
   // Chế độ determinate không dùng được mẹo border: viền chỉ vẽ được nguyên
@@ -48,7 +50,7 @@ export const Spin = ({
         aria-valuenow={pct}
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-label={label}
+        aria-label={t(label)}
         width={size}
         height={size}
         viewBox={`0 0 ${size} ${size}`}
@@ -74,7 +76,7 @@ export const Spin = ({
     <span
       data-slot="spin"
       role="status"
-      aria-label={label}
+      aria-label={t(label)}
       className={cn(
         "text-primary inline-block shrink-0 animate-spin rounded-full border-current border-t-transparent",
         className,

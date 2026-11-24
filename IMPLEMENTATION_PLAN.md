@@ -1,4 +1,65 @@
-# Implementation Plan — Dev Bench
+# Implementation Plan — DevBench
+
+## English / Tiếng Việt (2026-11-24)
+
+- English mặc định; thêm bộ chọn Language trong Settings, lưu lựa chọn trên máy.
+- Danh mục dịch tập trung và React Context; dịch UI/aria/placeholder, trạng thái,
+  toast, lỗi form và hộp thoại native. Không dịch dữ liệu hay enum nội bộ.
+- Giữ project, port, Dashboard và tên riêng; không dịch command/path/Git output/log.
+- Đồng bộ lựa chọn cho Electron main; kiểm tra đổi ngôn ngữ khi form đang mở,
+  persistence qua restart, mặc định English, dynamic counts và tiếng Việt ở viewport nhỏ.
+- Chạy typecheck/test/build, English smoke cũ và kiểm tra Electron hai ngôn ngữ.
+
+Đã hoàn tất; 24/24 test, typecheck/build, smoke English và smoke hai ngôn ngữ
+đều qua. Chi tiết tại [verification-i18n.md](docs/verification-i18n.md).
+
+## Placeholder chung cho form (2026-11-24)
+
+- Rà soát placeholder toàn bộ form; thay tên project/repository cụ thể bằng
+  mô tả chung. Bỏ ví dụ project riêng trong mô tả form và empty state.
+- Ghi quy tắc không dùng dữ liệu riêng làm ví dụ; giữ placeholder kỹ thuật chung.
+- Kiểm tra lại source, typecheck/test/build; không thay dữ liệu người dùng.
+- Đã hoàn tất: rà soát toàn bộ placeholder trong src/routes, không còn tên
+  project riêng trong UI; 17/17 test, typecheck và production build qua.
+
+## Logo terminal và icon Windows (2026-11-24)
+
+- Logo vector riêng: cửa sổ terminal navy, prompt trắng, cursor và khung màu
+  primary #f23551. Giữ silhouette rõ tại 16–32px, hình ảnh ấn tượng ở sidebar.
+- Một SVG gốc cho sidebar và favicon; tạo PNG/ICO nhiều kích thước từ cùng SVG.
+- Gắn icon vào BrowserWindow, executable/installer Windows và copy tài nguyên
+  cho cả dev lẫn production. Không dùng icon Electron mặc định khi chạy app.
+- Kiểm tra typecheck/test/build, icon native, sidebar expanded/collapsed/mobile;
+  đóng gói Windows để kiểm tra tài nguyên icon trong executable khi môi trường cho phép.
+- Đã hoàn tất: 17/17 test, build, native WM_GETICON và icon nhúng EXE qua;
+  bộ cài NSIS đã tạo. Chi tiết tại `docs/verification-logo.md`.
+
+## Theme lấy cảm hứng Clarity (2026-11-24)
+
+- Tham chiếu clarity.design: header navy, sidebar trung tính, card phẳng,
+  viền rõ, góc bo nhỏ và typography phân cấp nhẹ.
+- Giữ React/shadcn/Radix/Tailwind, icon Lucide, primary #f23551 cho light/dark.
+  Segoe UI với font offline hiện có làm fallback, không thêm thư viện UI.
+- Label cố định phía trên control bằng FieldLabel, không floating label.
+- Đồng bộ tokens, layout, dashboard/settings/tables và style primitives;
+  giữ hành vi navigation, IPC, form validation và local data.
+- Kiểm tra typecheck/test/build và Electron light/dark, form focus/filled/error,
+  sidebar collapse và viewport nhỏ.
+- Đã hoàn tất; 17/17 test và smoke Electron qua, ảnh light/dark/form được kiểm
+  tra. Chi tiết tại `docs/verification-clarity.md`.
+
+## Tách repo backend .NET (2026-11-24)
+
+- Giữ Git history của desktop tại repo hiện tại; tạo `dev-bench-server` độc lập,
+  sau khi kiểm tra sẽ đặt cạnh thư mục desktop để có thể push hai repo riêng.
+- Chuyển Fastify sang ASP.NET Core .NET 10, giữ HTTP contract Google OAuth,
+  PKCE/state/nonce, session theo thiết bị và MongoDB collections hiện có.
+- Backend tự sở hữu validation, tests, Docker, CI và hướng dẫn cấu hình.
+  Không import source TypeScript của desktop hoặc đưa secrets vào desktop.
+- Xóa Node backend/dependencies/scripts/test backend khỏi repo desktop;
+  giữ Google sign-in qua Electron main và mọi chức năng local.
+- Kiểm tra build/test backend, typecheck/test/build desktop và ghi giới hạn.
+- Đã triển khai; kết quả và giới hạn tại `docs/verification-repo-split.md`.
 
 Trạng thái: đã triển khai, build bộ cài và kiểm thử trên Windows.
 Kết quả thực tế cùng các kiểm tra OS thủ công còn lại nằm trong
@@ -198,3 +259,9 @@ project theo ID trước mọi hành động. Chỉ cho mở URL HTTP/HTTPS hợ
 Đã tham khảo `D:/me/ops-desk/ops-desk-client/CLAUDE.md` và các convention
 được import. Bộ rule local yêu cầu nêu kế hoạch trước khi sửa và tiếp tục
 theo công việc được giao, không chờ một lượt duyệt riêng.
+
+## Bố cục hai repo theo thư mục cha
+
+- `dev-bench/` chỉ là thư mục chứa; desktop ở `dev-bench-client/`, API .NET ở `dev-bench-server/`.
+- Mỗi thư mục con có `.git` riêng; giữ lịch sử và các thay đổi chưa commit.
+- Đã cập nhật tên repo trong tài liệu và đường dẫn dependency sau khi di chuyển.

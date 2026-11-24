@@ -1,4 +1,4 @@
-# Dev Bench 1.1
+# DevBench 1.1
 
 Desktop dashboard quản lý project có nhiều repo/service, chạy/dừng dev server,
 Git và log, kiểm tra port, sao lưu bộ cấu hình theo máy bằng Google + MongoDB.
@@ -29,6 +29,10 @@ Dev mở Electron với Vite ở `127.0.0.1:5173`. Renderer có HMR; thay đổi
 thường thay Electron, vì OS actions và tài khoản đi qua preload/main.
 
 ## Sử dụng
+
+App mặc định **English**. Đổi tại **Settings → Language → Tiếng Việt**;
+giao diện đổi ngay và ghi nhớ lựa chọn khi mở lại. Các từ `project`, `port`,
+`Dashboard`, tên riêng và dữ liệu bạn nhập được giữ nguyên.
 
 1. **Add Project**: đặt tên/mô tả, ví dụ OpsDesk.
 2. Mở project, **Add Repository** cho server, client, mobile, broker…
@@ -81,11 +85,17 @@ chung được khóa để không chạy hai Git mutation đồng thời.
 
 ## Theme và Settings
 
-Phong cách theo ảnh dashboard mới nhất: nền xám nhạt, card/sidebar trắng,
-bo góc mềm, viền và shadow nhẹ. Primary NestJS `#f23551` ở cả Light và Dark;
-dark dùng nền slate trung tính. Card thống kê đầu tiên dùng rose đậm.
-Font **Be Vietnam Pro** và **JetBrains Mono** đóng gói Latin/Vietnamese
-để dùng offline. License font trong `docs/licenses/`.
+Logo DevBench dùng biểu tượng terminal riêng, đồng bộ sidebar, favicon và icon
+Windows. SVG gốc tại `src/assets/dev-bench.svg`, PNG/ICO tại `build/`; chạy
+`pnpm icons` để tạo lại sau khi sửa SVG. Xem [brand assets](build/README.md).
+
+Phong cách lấy cảm hứng từ [Clarity](https://clarity.design/): header navy,
+sidebar trung tính, card phẳng, viền rõ và góc bo nhỏ. Giữ primary NestJS
+`#f23551` ở Light/Dark, icon Lucide và pattern shadcn/Radix/Tailwind.
+Label luôn nằm phía trên input/select/textarea, không floating label.
+Font giao diện Segoe UI với **Be Vietnam Pro** dự phòng; log dùng
+**JetBrains Mono**. Font dự phòng Latin/Vietnamese đóng gói để dùng offline.
+License font trong `docs/licenses/`.
 
 - Sidebar có một nút ghi theme hiện tại, mở dropdown Light / Dark / System;
   không còn hai mục Themes và mode riêng. Settings vẫn có appearance tiles.
@@ -98,34 +108,26 @@ Font **Be Vietnam Pro** và **JetBrains Mono** đóng gói Latin/Vietnamese
 - External terminal giữ theme riêng của ứng dụng terminal đó.
 - Settings quản lý project sets, export/import, account và cloud backup.
 
-## Google account và MongoDB
+## Google account và cloud backup
 
-Xem [hướng dẫn cấu hình backend](docs/cloud-setup.md).
+Backend nằm trong repo riêng **dev-bench-server**, dùng ASP.NET Core .NET 10 +
+MongoDB. Repo này chỉ chứa desktop Electron + React; không cần .NET để build
+desktop và không tự khởi động backend. Backend không phụ thuộc source desktop.
 
-Bạn điền `server/.env` từ `server/.env.example`: MongoDB URI, Google **Web
-application** Client ID/Secret, PUBLIC_API_ORIGIN. Callback chính xác là
-`<PUBLIC_API_ORIGIN>/auth/google/callback`.
+Xem [hướng dẫn kết nối](docs/cloud-setup.md). Trong Settings → Account & backup,
+nhập origin của backend rồi Continue with Google. Tài khoản được tạo tự động
+ở lần đăng nhập Google đầu tiên. MongoDB URI/client secret chỉ ở backend.
 
-```powershell
-pnpm server:dev
-```
-
-Production: `pnpm build:server`, rồi `pnpm server:start`. Backend cần endpoint
-HTTPS để các máy cùng sử dụng. Trong desktop Settings, nhập origin backend
-và Continue with Google. Không đưa URI MongoDB/client secret vào desktop.
-
-Mỗi account có nhiều snapshot bộ cấu hình theo máy. Back up current set tạo
-bản mới, không tự đồng bộ/ghi đè máy khác. Sau reset máy: đăng nhập → Preview
-restore → Import as new set → sửa path nếu cần. Source code vẫn qua Git.
-
-Local Export JSON / Import JSON không cần tài khoản. Giới hạn 2 MB/backup;
-import luôn tạo set mới, không chạy command hay ghi đè set hiện tại. Cần dừng
-process trước khi chuyển/import set. Có thể chọn khôi phục theme cùng config.
+Mỗi account có nhiều snapshot cấu hình theo máy. Back up current set tạo bản
+mới; restore luôn import thành set mới. Source code vẫn qua Git. Local Export
+JSON / Import JSON và quản lý project không cần tài khoản hoặc backend.
 
 ## Lưu trữ và migration
 
-`%APPDATA%\Dev Bench\projects.json` trên Windows, Electron userData tương ứng
-trên macOS. Workspace schema v3 chứa sets, project groups và repositories.
+`%APPDATA%\DevBench\projects.json` trên Windows, Electron userData tương ứng
+trên macOS. Khi mở lần đầu sau đổi tên, app sao chép dữ liệu từ thư mục
+`Dev Bench` cũ sang `DevBench` nếu thư mục mới chưa tồn tại; giữ nguyên bản cũ.
+Workspace schema v3 chứa sets, project groups và repositories.
 Đọc v1/v2 tự migrate, giữ ID repo, lưu bản gốc `projects.json.legacy.bak`.
 Các entry cũ chuyển thành project một repo. Backup schema v2 vẫn import v1.
 
@@ -143,18 +145,18 @@ pnpm test:cloud-e2e
 pnpm dist:win
 ```
 
-- Vitest/RTL và integration dùng repo/process/MongoDB tạm trong
-  `.test-artifacts/`; MongoDB binary tải một lần nếu chưa có cache.
+- Vitest/RTL và integration desktop dùng repo/process tạm trong `.test-artifacts/`.
+- Test backend/MongoDB chạy độc lập tại repo `dev-bench-server`.
 - Desktop smoke dùng production renderer/Electron thật, xác nhận project
   nhiều repo, sidebar, Card/Table, Ports, theme, Git và JSON restore.
-- Cloud smoke dùng API/MongoDB thật, stub **chỉ** Google identity boundary
-  trong harness, không có mock login trong production.
+- Cloud smoke kết nối harness .NET ở repo API; xem `docs/cloud-setup.md`.
+  Google identity được giả lập chỉ trong test, không có bypass trong production.
 - Native folder/save/quit dialog được stub lựa chọn trong test. Clipboard,
   terminal/browser OS và Google credentials thật có bước nghiệm thu thủ công.
-- Windows installer: `release/Dev-Bench-Setup-1.1.0.exe`.
-- Unpacked: `release/win-unpacked/Dev Bench.exe`.
+- Windows installer: `release/DevBench-Setup-1.1.0.exe`.
+- Unpacked: `release/win-unpacked/DevBench.exe`.
 - Kiểm tra unpacked bằng
-  `node scripts/smoke-electron.mjs "release/win-unpacked/Dev Bench.exe"`.
+  `node scripts/smoke-electron.mjs "release/win-unpacked/DevBench.exe"`.
 - Bộ cài chưa ký số. Source backend không được đưa vào desktop package.
 
 ### macOS
@@ -165,7 +167,10 @@ macOS runner. Chưa chạy trên Mac thật hoặc phát hành DMG trong môi tr
 Windows này; cần nghiệm thu terminal/PATH/stop tree, build và signing trên Mac.
 Hướng dẫn theo [electron-builder](https://www.electron.build/v26/docs/features/multi-platform-build/).
 
-Kết quả bản hiện tại: [verification-1.1.3.md](docs/verification-1.1.3.md).
+Kết quả tách backend .NET: [verification-repo-split.md](docs/verification-repo-split.md).
+
+Kết quả theme Clarity hiện tại: [verification-clarity.md](docs/verification-clarity.md).
+Kết quả giao diện bản 1.1.3 trước đó: [verification-1.1.3.md](docs/verification-1.1.3.md).
 
 ## Xử lý lỗi nhanh
 

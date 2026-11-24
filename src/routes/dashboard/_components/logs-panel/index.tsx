@@ -9,11 +9,14 @@ import {
   SheetTitle,
 } from "~/components/ui/sheet";
 import { cn } from "~/lib/utils";
+import { useLocale } from "~/providers/locale/context";
 
 import { useLogsPanel } from "./hook";
 import type { LogsPanelProps } from "./type";
 
 export const LogsPanel = (props: LogsPanelProps) => {
+  const { t, dateLocale } = useLocale();
+
   const state = useLogsPanel(props);
   return (
     <Sheet open={props.open} onOpenChange={props.onOpenChange}>
@@ -21,10 +24,10 @@ export const LogsPanel = (props: LogsPanelProps) => {
         <SheetHeader className="border-b p-6">
           <SheetTitle className="flex items-center gap-2">
             <ScrollText className="size-5" />
-            {props.project.name} · Logs
+            {props.project.name} · {t("Logs")}
           </SheetTitle>
           <SheetDescription>
-            stdout, stderr and lifecycle events · Last 1,500 chunks
+            {t("stdout, stderr and lifecycle events · Last 1,500 chunks")}
           </SheetDescription>
         </SheetHeader>
         <label className="flex items-center gap-2 border-b px-6 py-3">
@@ -32,32 +35,33 @@ export const LogsPanel = (props: LogsPanelProps) => {
             checked={state.follow}
             onCheckedChange={(value) => state.setFollow(value === true)}
           />
-          Follow output
+          {t("Follow output")}
         </label>
         <div
           data-terminal-theme={state.terminalTheme}
           tabIndex={0}
-          aria-label="Project process output"
+          aria-label={t("Project process output")}
           className={cn(
             "dashboard-log-output min-h-0 flex-1 overflow-auto",
             "bg-terminal-background text-terminal-foreground p-6 font-mono text-xs leading-6",
           )}
         >
-          {state.query.isPending && <p role="status">Loading logs…</p>}
+          {state.query.isPending && <p role="status">{t("Loading logs…")}</p>}
           {state.query.error && (
             <p role="alert" className="text-destructive">
-              {state.query.error.message}
+              {t(state.query.error.message)}
             </p>
           )}
           {state.query.data?.length === 0 && (
             <p className="text-terminal-muted">
-              No output yet. Run this project to see its logs here.
+              {t("No output yet. Run this project to see its logs here.")}
             </p>
           )}
           {state.query.data?.map((entry) => (
             <div key={entry.sequence} className="mb-2">
               <span className="text-terminal-muted">
-                {new Date(entry.time).toLocaleTimeString()} [{entry.stream}]
+                {new Date(entry.time).toLocaleTimeString(dateLocale)} [
+                {entry.stream}]
               </span>
               <pre
                 className={cn(

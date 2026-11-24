@@ -1,6 +1,23 @@
 # Kết quả kiểm tra trên Windows
 
-Bản mới nhất: [theme dashboard 1.1.3](verification-1.1.3.md).
+## English / Tiếng Việt — 24/11/2026
+
+English mặc định; đổi trong Settings → Language, lưu lựa chọn trên máy.
+24/24 test, typecheck/build, smoke Electron English và hai ngôn ngữ đều qua.
+Chi tiết và giới hạn: [verification-i18n.md](verification-i18n.md).
+
+## Placeholder form — 24/11/2026
+
+- Rà soát mọi placeholder trong routes; form project/repository/project set
+  dùng hướng dẫn chung. Mô tả form và empty state không còn tên project riêng.
+- Thêm rule không dùng tên project/repository/công ty hoặc dữ liệu riêng của
+  người dùng làm ví dụ; không thay dữ liệu đã lưu.
+- Typecheck, 17/17 test và production build qua; `git diff --check` qua.
+- Chưa tạo lại installer cho thay đổi nội dung này.
+
+Bản mới nhất: [logo terminal và icon Windows](verification-logo.md).
+Theme hiện tại: [Clarity](verification-clarity.md).
+Kết quả theme trước đó: [dashboard 1.1.3](verification-1.1.3.md).
 Phần dưới là kết quả bản 1.0; tính năng 1.1 ở
 [verification-1.1.0.md](verification-1.1.0.md).
 

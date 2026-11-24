@@ -9,9 +9,10 @@ import {
 } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { Toaster } from "sonner";
+import { LocalizedToaster } from "~/components/localized-toaster";
 
 import { ThemeProvider } from "~/providers/theme";
+import { LocaleProvider } from "~/providers/locale";
 import { Dashboard } from "~/routes/dashboard";
 import { Settings } from "~/routes/settings";
 import { AppLayout } from "~/components/layouts/app-layout";
@@ -86,10 +87,12 @@ if (!element) throw new Error("Application root is missing");
 createRoot(element).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <RouterProvider router={router} />
-        <Toaster richColors closeButton position="bottom-right" />
-      </ThemeProvider>
+      <LocaleProvider>
+        <ThemeProvider>
+          <RouterProvider router={router} />
+          <LocalizedToaster />
+        </ThemeProvider>
+      </LocaleProvider>
     </QueryClientProvider>
   </StrictMode>,
 );

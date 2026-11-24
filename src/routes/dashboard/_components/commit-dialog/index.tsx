@@ -14,6 +14,7 @@ import {
 import { Field, FieldError, FieldLabel } from "~/components/ui/field";
 import { Textarea } from "~/components/ui/textarea";
 import { cn } from "~/lib/utils";
+import { useLocale } from "~/providers/locale/context";
 
 import { useCommitDialog } from "./hook";
 import type { CommitDialogProps, CommitFormProps } from "./type";
@@ -27,6 +28,8 @@ export const CommitDialog = (props: CommitDialogProps) => (
 );
 
 export const CommitForm = (props: CommitFormProps) => {
+  const { t } = useLocale();
+
   const state = useCommitDialog(props);
   const staged = state.snapshot?.files.filter((file) => file.staged) ?? [];
   const unstaged = state.snapshot?.files.filter((file) => file.unstaged) ?? [];
@@ -41,14 +44,16 @@ export const CommitForm = (props: CommitFormProps) => {
           Git Commit
         </DialogTitle>
         <DialogDescription>
-          {props.project.name} · Only staged changes will be committed.
+          {props.project.name} · {t("Only staged changes will be committed.")}
         </DialogDescription>
       </DialogHeader>
       <div className="max-h-[65vh] space-y-5 overflow-y-auto p-6">
-        {state.query.isPending && <p role="status">Reading working tree…</p>}
+        {state.query.isPending && (
+          <p role="status">{t("Reading working tree…")}</p>
+        )}
         {state.query.error && (
           <p role="alert" className="whitespace-pre-wrap text-destructive">
-            {state.query.error.message}
+            {t(state.query.error.message)}
           </p>
         )}
         {state.snapshot && (
@@ -65,10 +70,12 @@ export const CommitForm = (props: CommitFormProps) => {
             {!state.review && (
               <section
                 className="dashboard-commit-unstaged space-y-2"
-                aria-label="Unstaged changes"
+                aria-label={t("Unstaged changes")}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <h4>Unstaged changes ({unstaged.length})</h4>
+                  <h4>
+                    {t("Unstaged changes")} ({unstaged.length})
+                  </h4>
                   <Button
                     type="button"
                     size="sm"
@@ -76,11 +83,13 @@ export const CommitForm = (props: CommitFormProps) => {
                     disabled={!state.selected.length || state.busy}
                     onClick={() => void state.stage()}
                   >
-                    Stage selected
+                    {t("Stage selected")}
                   </Button>
                 </div>
                 {!unstaged.length && (
-                  <p className="text-muted-foreground">No unstaged changes.</p>
+                  <p className="text-muted-foreground">
+                    {t("No unstaged changes.")}
+                  </p>
                 )}
                 {unstaged.map((file) => (
                   <label
@@ -94,7 +103,7 @@ export const CommitForm = (props: CommitFormProps) => {
                       checked={state.selected.includes(file.path)}
                       onCheckedChange={() => state.toggle(file.path)}
                       disabled={state.busy}
-                      aria-label={`Stage ${file.path}`}
+                      aria-label={t("Stage {0}", { 0: file.path })}
                     />
                     <span className="min-w-0 break-all font-mono text-xs">
                       {file.originalPath ? `${file.originalPath} → ` : ""}
@@ -110,18 +119,18 @@ export const CommitForm = (props: CommitFormProps) => {
             )}
             <section
               className="dashboard-commit-staged space-y-2"
-              aria-label="Staged changes"
+              aria-label={t("Staged changes")}
             >
               <h4>
-                {state.review ? "Final staged list" : "Staged changes"} (
+                {state.review ? t("Final staged list") : t("Staged changes")} (
                 {staged.length})
               </h4>
               <p className="text-xs text-muted-foreground">
-                Includes files staged outside Dev Bench.
+                {t("Includes files staged outside DevBench.")}
               </p>
               {!staged.length && (
                 <p className="text-muted-foreground">
-                  Stage files before committing.
+                  {t("Stage files before committing.")}
                 </p>
               )}
               {staged.map((file) => (
@@ -140,14 +149,14 @@ export const CommitForm = (props: CommitFormProps) => {
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid || undefined}>
                   <FieldLabel htmlFor="commit-message">
-                    Commit message
+                    {t("Commit message")}
                   </FieldLabel>
                   <Textarea
                     {...field}
                     id="commit-message"
                     aria-invalid={fieldState.invalid}
                     disabled={state.busy}
-                    placeholder="Describe your changes"
+                    placeholder={t("Describe your changes")}
                   />
                   <FieldError errors={[fieldState.error]} />
                 </Field>
@@ -156,8 +165,9 @@ export const CommitForm = (props: CommitFormProps) => {
             {state.review && (
               <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
                 <p>
-                  Confirm the complete staged list above before creating this
-                  commit.
+                  {t(
+                    "Confirm the complete staged list above before creating this commit.",
+                  )}
                 </p>
                 <Button
                   type="button"
@@ -165,7 +175,7 @@ export const CommitForm = (props: CommitFormProps) => {
                   className="h-auto px-0"
                   onClick={state.cancelReview}
                 >
-                  Back to file selection
+                  {t("Back to file selection")}
                 </Button>
               </div>
             )}
@@ -173,7 +183,7 @@ export const CommitForm = (props: CommitFormProps) => {
         )}
         {state.error && (
           <div role="alert" className="whitespace-pre-wrap text-destructive">
-            {state.error}
+            {t(state.error)}
           </div>
         )}
       </div>
@@ -184,14 +194,14 @@ export const CommitForm = (props: CommitFormProps) => {
           disabled={state.busy}
           onClick={() => props.onOpenChange(false)}
         >
-          Cancel
+          {t("Cancel")}
         </Button>
         <Button
           type="submit"
           loading={state.busy}
           disabled={!staged.length || !!state.query.error}
         >
-          {state.review ? "Confirm Commit" : "Review staged files"}
+          {state.review ? t("Confirm Commit") : t("Review staged files")}
         </Button>
       </DialogFooter>
     </form>

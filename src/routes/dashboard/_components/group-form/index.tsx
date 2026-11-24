@@ -19,6 +19,7 @@ import {
 } from "~/components/ui/field";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
+import { useLocale } from "~/providers/locale/context";
 
 import { useGroupForm } from "./hook";
 import type { GroupFormDialogProps, GroupFormProps } from "./type";
@@ -31,6 +32,8 @@ export const GroupFormDialog = (props: GroupFormDialogProps) => (
   </Dialog>
 );
 export const GroupForm = (props: GroupFormProps) => {
+  const { t } = useLocale();
+
   const { form, submit } = useGroupForm(props);
   return (
     <form
@@ -40,26 +43,27 @@ export const GroupForm = (props: GroupFormProps) => {
     >
       <DialogHeader>
         <DialogTitle>
-          {props.isEdit ? "Edit Project" : "Add Project"}
+          {props.isEdit ? t("Edit Project") : t("Add Project")}
         </DialogTitle>
         <DialogDescription>
-          A project groups repositories and services, such as OpsDesk server,
-          client and broker.
+          {t("Group related repositories and services in one project.")}
         </DialogDescription>
       </DialogHeader>
       <FieldSet disabled={form.formState.isSubmitting}>
-        <FieldLegend className="sr-only">Project details</FieldLegend>
+        <FieldLegend className="sr-only">{t("Project details")}</FieldLegend>
         <FieldGroup>
           <Controller
             control={form.control}
             name="name"
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid || undefined}>
-                <FieldLabel htmlFor="project-name">Project name</FieldLabel>
+                <FieldLabel htmlFor="project-name">
+                  {t("Project name")}
+                </FieldLabel>
                 <Input
                   {...field}
                   id="project-name"
-                  placeholder="OpsDesk"
+                  placeholder={t("Enter a project name")}
                   aria-invalid={fieldState.invalid}
                 />
                 <FieldError errors={[fieldState.error]} />
@@ -72,12 +76,12 @@ export const GroupForm = (props: GroupFormProps) => {
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid || undefined}>
                 <FieldLabel htmlFor="project-description">
-                  Description
+                  {t("Description")}
                 </FieldLabel>
                 <Textarea
                   {...field}
                   id="project-description"
-                  placeholder="Internal operations workspace"
+                  placeholder={t("Describe the project")}
                   aria-invalid={fieldState.invalid}
                 />
                 <FieldError errors={[fieldState.error]} />
@@ -94,10 +98,10 @@ export const GroupForm = (props: GroupFormProps) => {
           disabled={form.formState.isSubmitting}
           onClick={() => props.onOpenChange(false)}
         >
-          Cancel
+          {t("Cancel")}
         </Button>
         <Button type="submit" loading={form.formState.isSubmitting}>
-          {props.isEdit ? "Save Project" : "Add Project"}
+          {props.isEdit ? t("Save Project") : t("Add Project")}
         </Button>
       </DialogFooter>
     </form>

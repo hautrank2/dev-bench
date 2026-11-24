@@ -1,8 +1,9 @@
-# Global Rules — Dev Bench
+# Global Rules — DevBench
 
 Desktop dashboard for local projects and per-machine configuration backups.
 Source of truth: dev-bench-spec.md plus latest docs/product-model.md.
-UI labels/errors/toasts are English;
+UI supports English (default) and Vietnamese, selected in Settings;
+preserve the terms project, port and Dashboard, proper names, paths and commands.
 communication and delivery documentation are Vietnamese.
 
 @docs/rules/source-code-rule.md
@@ -25,9 +26,11 @@ communication and delivery documentation are Vietnamese.
 ## Adaptations of imported reusable rules
 
 - Vite/Electron, not Next.js: no Server Components, App Router or use client.
-- `server/` owns Google sign-in and MongoDB backup APIs. OAuth, network and
-  encrypted session storage belong in Electron main. Renderer uses IPC.
-  Never ship MongoDB credentials in the desktop app.
+- Backend lives in the separate `dev-bench-server` repo (ASP.NET Core .NET 10 +
+  MongoDB). This repo contains only the Electron desktop and React renderer.
+  Desktop OAuth coordination, HTTP and encrypted sessions belong in main;
+  renderer uses IPC. Never ship MongoDB credentials or Google client secrets.
+  See docs/cloud-setup.md and docs/verification-repo-split.md.
 - Internal aliases: ~/ for src/, @shared/ for shared/.
 - Renderer uses typed action-specific IPC instead of axios/httpClient.
   No renderer filesystem, process, shell or generic IPC access.
@@ -37,17 +40,24 @@ communication and delivery documentation are Vietnamese.
   This permits adapting existing shadcn components rather than downloading
   equivalents. Use Radix consistently, not Base UI props.
 - Body font 14px; headings use src/typoset.css inside @layer base.
-- Theme: latest supplied dashboard reference, pale gray canvas, solid white
-  sidebar/cards, soft rounded corners and restrained shadows. Dark uses
-  neutral slate surfaces. NestJS primary #f23551 in both modes; a deeper
-  rose gradient may highlight the first dashboard statistic.
-  Be Vietnam Pro includes Vietnamese glyphs. System/light/dark modes;
+- Localization: shared/i18n.ts and shared/locales/vi.ts hold messages; renderer
+  uses the locale Context, main synchronizes native dialogs through locale IPC.
+  Never translate internal enums, user names/data or external process/Git output.
+- App brand: custom terminal SVG in src/assets/dev-bench.svg; generated PNG/ICO
+  in build/. Sidebar, favicon, native window and Windows package share this mark.
+  Other UI icons remain Lucide. See scripts/generate-icons.mjs to regenerate.
+- Theme: Clarity-inspired enterprise UI, navy header, neutral sidebar, flat
+  white cards, clear borders and small corners. Dark uses navy/slate surfaces.
+  Keep NestJS primary #f23551 in both modes and Lucide icons. Retain
+  shadcn/Radix/Tailwind; no Angular/Clarity dependency. FieldLabel always stays
+  above controls; never floating labels. Segoe UI with offline Be Vietnam Pro
+  fallback. System/light/dark modes;
   migrate blueDark to dark. One sidebar dropdown shows the current mode;
   no separate Themes/mode navigation. Sidebar collapses to an icon rail and
   remembers its state. Settings retains independent terminal/log palettes.
   Layout: full-height sidebar owns the brand; content column owns header
   and scrolling body. Collapse/expand control belongs in the header.
-  Header remains 50px; no header theme toggle.
+  Header remains 50px with a navy surface; no header theme toggle.
 - Local .claude/rules replace source-project details and conflicting rules.
 
 ## Domain and boundaries

@@ -1,11 +1,12 @@
-# Theme — Dev Bench
+# Theme — DevBench
 
-Tokens in src/index.css. Latest supplied reference: clean rounded dashboard,
-pale gray canvas, solid white sidebar/cards, subtle borders and shadows.
-Replace the reference's green accent with NestJS primary #f23551 in both
-Light and Dark. Dark uses neutral slate surfaces. No cyan/peach canvas or
-frosted cards. A deeper rose gradient can highlight the first statistic.
-Self-host Be Vietnam Pro with Vietnamese/Latin glyphs; logs use JetBrains Mono.
+Tokens in src/index.css. Reference: https://clarity.design/ — navy header,
+neutral sidebar, flat white cards, clear borders, small corners and compact UI.
+Keep NestJS primary #f23551 in Light and Dark, shadcn/Radix/Tailwind and Lucide.
+Never install Angular/Clarity components. No gradients, floating labels or glass.
+Brand asset exception: the custom terminal logo may use a subtle primary-color
+gradient; keep all application surfaces flat and keep other icons from Lucide.
+Segoe UI with self-hosted Be Vietnam Pro fallback; logs use JetBrains Mono.
 ThemeProvider applies system/light/dark. Migrate old blueDark to dark.
 
 - One sidebar dropdown displays Light/Dark/System and checks the selected
@@ -17,7 +18,7 @@ ThemeProvider applies system/light/dark. Migrate old blueDark to dark.
   inside the adjacent content column; collapse/expand button is in header.
 - Terminal/log palette is independent: follow app, midnight, paper or rose.
   Applies to in-app output, not external terminal preferences.
-- Header height --header-height = 50px, solid bg-card.
+- Header height --header-height = 50px, navy with dedicated foreground tokens.
 - Sidebar selected: bg-sidebar-accent text-sidebar-accent-foreground.
 - dark: follows .dark; respect reduced motion.
 - Use semantic tokens, no raw Tailwind palette/hex in components.

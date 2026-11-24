@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import type { BatchResult, ProjectInput, ProjectView } from "@shared/contracts";
 import type { ProjectGroup, SaveGroup } from "@shared/workspace";
 import { projectsApi } from "~/api/api-list/projects";
+import { useLocale } from "~/providers/locale/context";
 
 import type {
   Action,
@@ -15,6 +16,8 @@ import type {
 } from "./type";
 
 export const useDashboard = (props: UseDashboardProps) => {
+  const { t } = useLocale();
+
   const client = useQueryClient();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
@@ -58,7 +61,8 @@ export const useDashboard = (props: UseDashboardProps) => {
     setPending((items) => [...items, key]);
     try {
       const output = await projectsApi[kind](project.id);
-      if (kind === "copyPath") toast.success(`${project.name}: Path copied`);
+      if (kind === "copyPath")
+        toast.success(t("{0}: Path copied", { 0: project.name }));
       if (kind === "pull" || kind === "push") {
         setResult({
           title: `${project.name}: ${kind === "pull" ? "Pull Code" : "Push"}`,
@@ -66,7 +70,10 @@ export const useDashboard = (props: UseDashboardProps) => {
           failed: false,
         });
         toast.success(
-          `${project.name}: ${kind === "pull" ? "Pull" : "Push"} completed`,
+          t("{0}: {1} completed", {
+            0: project.name,
+            1: kind === "pull" ? "Pull" : "Push",
+          }),
         );
       }
     } catch (error) {
@@ -76,7 +83,9 @@ export const useDashboard = (props: UseDashboardProps) => {
         output,
         failed: true,
       });
-      toast.error(`${project.name}: ${kind} failed`, { description: output });
+      toast.error(t("{0}: {1} failed", { 0: project.name, 1: kind }), {
+        description: output,
+      });
     } finally {
       setPending((items) => items.filter((item) => item !== key));
       await query.refetch();
@@ -104,7 +113,9 @@ export const useDashboard = (props: UseDashboardProps) => {
       id: editor?.project?.id,
       input: { ...input, groupId: input.groupId ?? editor?.groupId },
     });
-    toast.success(editor?.project ? "Repository updated" : "Repository added");
+    toast.success(
+      editor?.project ? t("Repository updated") : t("Repository added"),
+    );
     await query.refetch();
   };
   const saveGroup = async (input: SaveGroup) => {
@@ -138,7 +149,7 @@ export const useDashboard = (props: UseDashboardProps) => {
       await client.invalidateQueries({ queryKey: ["projects"] });
       await workspace.refetch();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : String(error));
+      toast.error(t(error instanceof Error ? error.message : String(error)));
     }
   };
   const projects = query.data ?? [];

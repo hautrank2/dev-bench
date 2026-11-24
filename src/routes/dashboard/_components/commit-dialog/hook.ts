@@ -6,10 +6,13 @@ import { toast } from "sonner";
 
 import type { GitSnapshot } from "@shared/contracts";
 import { projectsApi } from "~/api/api-list/projects";
+import { useLocale } from "~/providers/locale/context";
 
 import { commitFormSchema, type UseCommitDialogProps } from "./type";
 
 export const useCommitDialog = (props: UseCommitDialogProps) => {
+  const { t } = useLocale();
+
   const client = useQueryClient();
   const form = useForm({
     resolver: zodResolver(commitFormSchema),
@@ -58,7 +61,7 @@ export const useCommitDialog = (props: UseCommitDialogProps) => {
       if (!review) {
         const snapshot = await projectsApi.git(props.project.id);
         if (!snapshot.files.some((file) => file.staged))
-          throw new Error("No staged files to commit.");
+          throw new Error(t("No staged files to commit."));
         setReview(snapshot);
       } else {
         const output = await projectsApi.commit({
@@ -66,7 +69,7 @@ export const useCommitDialog = (props: UseCommitDialogProps) => {
           message,
           token: review.token,
         });
-        toast.success(`${props.project.name}: Commit created`, {
+        toast.success(t("{0}: Commit created", { 0: props.project.name }), {
           description: output,
         });
         props.onOpenChange(false);

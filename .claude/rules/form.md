@@ -76,7 +76,12 @@ form mới), lấy lỗi từ `fieldState`:
 - Select gắn server (User, Asset…) dùng `XSelect` theo `select-async.md`,
   vẫn nằm trong `Field` như ô thường.
 
-## Áp dụng trong Dev Bench
+## Áp dụng trong DevBench
 
 Form mới dùng Field/Controller trong src/routes/dashboard/_components.
 Không có các wrapper form legacy của repo tham chiếu trong project này.
+FieldLabel luôn nằm trong luồng bố cục phía trên input/select/textarea; không
+floating label, không đặt label vào placeholder hoặc dịch label khi focus/có giá trị.
+Placeholder và nội dung hướng dẫn dùng mô tả chung; không dùng tên project,
+repository, công ty hoặc dữ liệu riêng của người dùng làm ví dụ. Ví dụ kỹ thuật
+chung như localhost, example.com và lệnh chạy vẫn được phép.

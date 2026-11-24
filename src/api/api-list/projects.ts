@@ -11,7 +11,7 @@ const bridge = (): DesktopApi => {
   const api = (window as unknown as { desktop?: DesktopApi }).desktop;
   if (!api)
     throw new Error(
-      "Desktop connection unavailable. Launch Dev Bench using pnpm dev or the installed application.",
+      "Desktop connection unavailable. Launch DevBench using pnpm dev or the installed application.",
     );
   return api;
 };
@@ -21,6 +21,8 @@ export const unwrap = async <T>(promise: Promise<Result<T>>) => {
   return result.data;
 };
 export const projectsApi = {
+  setLanguage: (language: import("@shared/i18n").Language) =>
+    unwrap(bridge().setLanguage(language)),
   saveGroup: (input: SaveGroup) => unwrap(bridge().saveGroup(input)),
   runGroup: (id: string) => unwrap(bridge().runGroup(id)),
   stopGroup: (id: string) => unwrap(bridge().stopGroup(id)),

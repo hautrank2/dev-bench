@@ -1,4 +1,4 @@
-# Mô hình tính năng Dev Bench 1.1
+# Mô hình tính năng DevBench 1.1
 
 ```text
 Google account
@@ -47,10 +47,11 @@ Layout có hai cột: sidebar toàn chiều cao chứa logo; cột nội dung g�
 và body. Nút thu gọn/mở rộng nằm trong header. Brand vẫn hiện dưới dạng icon
 khi sidebar thu gọn; body và danh sách navigation cuộn độc lập khi cần.
 
-Theme 1.1.3 theo ảnh dashboard mới nhất: nền xám nhạt, card/sidebar trắng,
-bo góc mềm và shadow nhẹ. Primary NestJS #f23551 cho cả hai mode, dark dùng
-slate trung tính; font Be Vietnam Pro hỗ trợ tiếng Việt. Card thống kê đầu
-tiên có nền rose đậm tương ứng card nổi bật trong ảnh.
+Theme hiện tại lấy cảm hứng Clarity: header navy, sidebar trung tính, card
+phẳng, viền rõ và góc bo nhỏ. Primary NestJS #f23551 ở cả light/dark; dark
+dùng navy/slate. Icon Lucide, shadcn/Radix/Tailwind vẫn được giữ. Label cố định
+trên control, không floating label. Segoe UI với Be Vietnam Pro dự phòng tiếng
+Việt, JetBrains Mono cho log. Card thống kê đầu tiên nhấn bằng viền primary.
 
 ## Run và Git
 
@@ -97,6 +98,12 @@ Backup/export schema v2 giữ cấu trúc project → repo, paths, commands và 
 - Local config vẫn dùng được khi offline hoặc chưa đăng nhập.
 
 ## Tài khoản
+
+Ngôn ngữ giao diện được chọn riêng trên từng máy trong Settings → Language:
+English mặc định hoặc Tiếng Việt. Lựa chọn áp dụng ngay cho giao diện và
+hộp thoại của app, lưu qua lần mở lại, không thuộc snapshot cloud. Giữ nguyên
+project, port, Dashboard, tên riêng, tên bộ cấu hình/project/repository,
+command, đường dẫn và log/diagnostic từ công cụ bên ngoài.
 
 Continue with Google dùng browser mặc định. Backend xác minh Google identity,
 tạo account theo `sub`, có session riêng cho từng thiết bị. Sign out chỉ thu

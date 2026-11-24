@@ -15,25 +15,30 @@ import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { cn } from "~/lib/utils";
+import { useLocale } from "~/providers/locale/context";
 
 import { useInspect } from "./hook";
 import type { InspectProps } from "./type";
 
 export const Inspect = (props: InspectProps) => {
+  const { t } = useLocale();
+
   const state = useInspect(props);
   const titles = {
-    ports: "Ports",
-    stats: "Stats",
-    utilities: "Utilities",
+    ports: t("Ports"),
+    stats: t("Stats"),
+    utilities: t("Utilities"),
     hosts: "Hosts",
-    "config-files": "Config Files",
+    "config-files": t("Config Files"),
   };
   const descriptions = {
-    ports: "Configured endpoints and actual TCP listeners on this machine.",
-    stats: "A live snapshot of the projects and repositories in this set.",
-    utilities: "Check the tools your repositories need to run.",
-    hosts: "Read the local hosts file without changing system configuration.",
-    "config-files": "Find common configuration files in your repositories.",
+    ports: t("Configured endpoints and actual TCP listeners on this machine."),
+    stats: t("A live snapshot of the projects and repositories in this set."),
+    utilities: t("Check the tools your repositories need to run."),
+    hosts: t(
+      "Read the local hosts file without changing system configuration.",
+    ),
+    "config-files": t("Find common configuration files in your repositories."),
   };
   const repos = state.repositories.data ?? [];
   const groups = state.workspace.data?.groups ?? [];
@@ -51,30 +56,30 @@ export const Inspect = (props: InspectProps) => {
     <main className="inspect-root mx-auto max-w-[1440px] space-y-6 p-5 sm:p-8">
       <section className="inspect-heading flex flex-wrap items-end justify-between gap-4">
         <div className="space-y-2">
-          <p className="text-xs uppercase tracking-widest text-primary">
-            {state.workspace.data?.deviceName ?? "This device"}
+          <p className="text-xs uppercase tracking-widest text-primary-ink">
+            {state.workspace.data?.deviceName ?? t("This device")}
           </p>
-          <h1 className="text-3xl">{titles[props.kind]}</h1>
+          <h1>{titles[props.kind]}</h1>
           <p className="text-muted-foreground">{descriptions[props.kind]}</p>
         </div>
         <Button variant="outline" onClick={state.refresh}>
           <RefreshCw
             className={cn("size-4", query.isFetching && "animate-spin")}
           />
-          Refresh
+          {t("Refresh")}
         </Button>
       </section>
       {query.isPending && (
         <p role="status" className="p-8 text-center text-muted-foreground">
-          Reading {titles[props.kind].toLowerCase()}…
+          {t("Reading {0}…", { 0: titles[props.kind].toLowerCase() })}
         </p>
       )}
       {query.error && (
         <p
           role="alert"
-          className="whitespace-pre-wrap rounded-xl border border-destructive/30 p-5 text-destructive"
+          className="whitespace-pre-wrap rounded-md border border-destructive/30 p-5 text-destructive"
         >
-          {query.error.message}
+          {t(query.error.message)}
         </p>
       )}
 
@@ -87,8 +92,8 @@ export const Inspect = (props: InspectProps) => {
                 value={state.search}
                 onChange={(event) => state.setSearch(event.target.value)}
                 className="w-64 pl-9"
-                placeholder="Search port or project…"
-                aria-label="Search ports"
+                placeholder={t("Search port or project…")}
+                aria-label={t("Search ports")}
               />
             </div>
             <label className="flex items-center gap-2 text-sm">
@@ -98,21 +103,21 @@ export const Inspect = (props: InspectProps) => {
                   state.setShowSystem(checked === true)
                 }
               />
-              Show unmanaged listeners
+              {t("Show unmanaged listeners")}
             </label>
           </div>
           <div
-            className="ports-table overflow-x-auto rounded-xl border bg-card"
+            className="ports-table overflow-x-auto rounded-md border bg-card"
             tabIndex={0}
           >
             <table className="w-full text-left">
               <thead className="border-b bg-muted/40 text-xs text-muted-foreground">
                 <tr>
-                  <th className="p-4">Port</th>
-                  <th className="p-4">Project / Repository</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4">PID / Process</th>
-                  <th className="p-4">Source</th>
+                  <th className="p-4">{t("Port")}</th>
+                  <th className="p-4">{t("Project / Repository")}</th>
+                  <th className="p-4">{t("Status")}</th>
+                  <th className="p-4">{t("PID / Process")}</th>
+                  <th className="p-4">{t("Source")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -140,7 +145,7 @@ export const Inspect = (props: InspectProps) => {
                               : "bg-muted text-muted-foreground",
                         )}
                       >
-                        {port.status}
+                        {t(port.status)}
                       </span>
                     </td>
                     <td className="p-4 text-xs">
@@ -158,12 +163,12 @@ export const Inspect = (props: InspectProps) => {
                         ))
                       ) : (
                         <span className="text-muted-foreground">
-                          No listener
+                          {t("No listener")}
                         </span>
                       )}
                     </td>
                     <td className="p-4 text-xs text-muted-foreground">
-                      {port.source}
+                      {t(port.source)}
                     </td>
                   </tr>
                 ))}
@@ -172,16 +177,16 @@ export const Inspect = (props: InspectProps) => {
             {!query.isPending && !state.filteredPorts.length && (
               <div className="p-12 text-center text-muted-foreground">
                 <Network className="mx-auto mb-3 size-7" />
-                No matching ports. Configure a local Web URL or run a
-                repository.
+                {t(
+                  "No matching ports. Configure a local Web URL or run a repository.",
+                )}
               </div>
             )}
           </div>
           <p className="text-xs leading-6 text-muted-foreground">
-            Available: no listener was found. Listening: owned by this
-            repository's process tree. Conflict: the configured port is held by
-            another process. This checks TCP, not HTTP readiness. Unmanaged
-            processes are never stopped here.
+            {t(
+              "Available: no listener was found. Listening: owned by this repository's process tree. Conflict: the configured port is held by another process. This checks TCP, not HTTP readiness. Unmanaged processes are never stopped here.",
+            )}
           </p>
         </section>
       )}
@@ -190,37 +195,37 @@ export const Inspect = (props: InspectProps) => {
         <section className="stats-content space-y-6">
           <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
             {[
-              { label: "Projects", value: groups.length },
-              { label: "Repositories", value: repos.length },
+              { label: t("Projects"), value: groups.length },
+              { label: t("Repositories"), value: repos.length },
               {
-                label: "Running",
+                label: t("Running"),
                 value: repos.filter((repo) => repo.runtime.status === "Running")
                   .length,
               },
               {
-                label: "Failed",
+                label: t("Failed"),
                 value: repos.filter((repo) => repo.runtime.status === "Failed")
                   .length,
               },
             ].map((item) => (
               <div
                 key={item.label}
-                className="panel-surface rounded-xl border p-5"
+                className="panel-surface rounded-md border p-5"
               >
                 <p className="text-xs text-muted-foreground">{item.label}</p>
                 <p className="mt-3 text-3xl font-semibold">{item.value}</p>
               </div>
             ))}
           </div>
-          <div className="overflow-x-auto rounded-xl border bg-card">
+          <div className="overflow-x-auto rounded-md border bg-card">
             <table className="w-full text-left">
               <thead className="border-b bg-muted/40 text-xs text-muted-foreground">
                 <tr>
-                  <th className="p-4">Project</th>
-                  <th className="p-4">Repositories</th>
-                  <th className="p-4">Running</th>
-                  <th className="p-4">Git checkouts</th>
-                  <th className="p-4">Startup selection</th>
+                  <th className="p-4">{t("Project")}</th>
+                  <th className="p-4">{t("Repositories")}</th>
+                  <th className="p-4">{t("Running")}</th>
+                  <th className="p-4">{t("Git checkouts")}</th>
+                  <th className="p-4">{t("Startup selection")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -265,13 +270,14 @@ export const Inspect = (props: InspectProps) => {
             </table>
             {groups.length === 0 && (
               <p className="p-8 text-center text-muted-foreground">
-                Add a project to see its statistics.
+                {t("Add a project to see its statistics.")}
               </p>
             )}
           </div>
           <p className="text-xs text-muted-foreground">
-            Counts reflect the current set and session. Historical usage is not
-            recorded.
+            {t(
+              "Counts reflect the current set and session. Historical usage is not recorded.",
+            )}
           </p>
         </section>
       )}
@@ -279,7 +285,7 @@ export const Inspect = (props: InspectProps) => {
       {props.kind === "utilities" && (
         <section className="utilities-content space-y-5">
           {state.system.data && (
-            <div className="rounded-xl border bg-card p-5">
+            <div className="rounded-md border bg-card p-5">
               <h3>{state.system.data.hostname}</h3>
               <p className="mt-1 text-muted-foreground">
                 {state.system.data.platform} · {state.system.data.arch}
@@ -290,7 +296,7 @@ export const Inspect = (props: InspectProps) => {
             {state.system.data?.tools.map((tool) => (
               <article
                 key={tool.name}
-                className="panel-surface space-y-4 rounded-xl border p-5"
+                className="panel-surface space-y-4 rounded-md border p-5"
               >
                 <div className="flex items-center justify-between">
                   <h3 className="capitalize">{tool.name}</h3>
@@ -301,7 +307,7 @@ export const Inspect = (props: InspectProps) => {
                   )}
                 </div>
                 <p className="break-all font-mono text-xs">
-                  {tool.version || "Not available on PATH"}
+                  {tool.version || t("Not available on PATH")}
                 </p>
                 {tool.error && (
                   <p className="whitespace-pre-wrap break-words text-xs text-destructive">
@@ -315,19 +321,19 @@ export const Inspect = (props: InspectProps) => {
             <Button variant="outline" asChild>
               <Link to="/ports">
                 <Network />
-                Inspect ports
+                {t("Inspect ports")}
               </Link>
             </Button>
             <Button variant="outline" asChild>
               <Link to="/config-files">
                 <FileText />
-                Browse configuration
+                {t("Browse configuration")}
               </Link>
             </Button>
             <Button variant="outline" asChild>
               <Link to="/settings">
                 <Terminal />
-                Terminal appearance
+                {t("Terminal appearance")}
               </Link>
             </Button>
           </div>
@@ -340,12 +346,12 @@ export const Inspect = (props: InspectProps) => {
             <Globe className="size-4" />
             <code className="break-all">{state.hosts.data.file}</code>
             <span className="ml-auto rounded bg-muted px-2 py-1 text-xs">
-              Read only
+              {t("Read only")}
             </span>
           </div>
           <pre
             tabIndex={0}
-            className="max-h-[65vh] overflow-auto whitespace-pre-wrap break-words rounded-xl border bg-card p-6 text-xs leading-7"
+            className="max-h-[65vh] overflow-auto whitespace-pre-wrap break-words rounded-md border bg-card p-6 text-xs leading-7"
           >
             {state.hosts.data.content || "# Empty hosts file"}
           </pre>
@@ -357,11 +363,11 @@ export const Inspect = (props: InspectProps) => {
           <Input
             value={state.search}
             onChange={(event) => state.setSearch(event.target.value)}
-            placeholder="Search repository or filename…"
-            aria-label="Search configuration files"
+            placeholder={t("Search repository or filename…")}
+            aria-label={t("Search configuration files")}
             className="max-w-sm"
           />
-          <div className="divide-y rounded-xl border bg-card">
+          <div className="divide-y rounded-md border bg-card">
             {state.filteredFiles.map((file) => (
               <article
                 key={`${file.repositoryId}:${file.fileName}`}
@@ -387,19 +393,20 @@ export const Inspect = (props: InspectProps) => {
                   }
                 >
                   <ExternalLink />
-                  Open
+                  {t("Open")}
                 </Button>
               </article>
             ))}
             {!state.files.isPending && state.filteredFiles.length === 0 && (
               <p className="p-12 text-center text-muted-foreground">
-                No matching configuration files in this set.
+                {t("No matching configuration files in this set.")}
               </p>
             )}
           </div>
           <p className="text-xs text-muted-foreground">
-            Common project configuration files only. Secret .env files are
-            excluded. Open uses your system's default editor.
+            {t(
+              "Common project configuration files only. Secret .env files are excluded. Open uses your system's default editor.",
+            )}
           </p>
         </section>
       )}

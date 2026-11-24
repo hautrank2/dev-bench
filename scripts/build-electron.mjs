@@ -1,4 +1,7 @@
 import { build } from "esbuild";
+import { copyBrandAssets } from "./brand-assets.mjs";
+
+await copyBrandAssets();
 await build({
   entryPoints: ["electron/main.ts", "electron/preload.ts"],
   bundle: true,

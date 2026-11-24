@@ -6,7 +6,7 @@ paths:
 
 # Selects
 
-No server entity selects in Dev Bench. Use shadcn Select for static settings.
+No server entity selects in DevBench. Use shadcn Select for static settings.
 Do not introduce OpsDesk endpoints/pagination. Future remote entity selects:
 generic engine + entity adapter, lazy open, debounced server search, infinite
 pages, selected-label cache and preset resolution. Filters in query keys.

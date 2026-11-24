@@ -220,7 +220,7 @@ try {
       ? "Copy Path wrote the exact Unicode folder to the Windows clipboard."
       : "Copy Path completed; clipboard readback is unavailable in this Windows session (PowerShell is also empty). Manual OS verification remains.",
   );
-  await page.getByRole("button", { name: "Run All", exact: false }).click();
+  await page.getByRole("button", { name: "Run All", exact: true }).click();
   await wait(async () => {
     const result = await page.evaluate(() => window.desktop.list());
     return (
@@ -232,7 +232,7 @@ try {
   const initial = await page.evaluate(() => window.desktop.list());
   assert(initial.ok);
   const pids = initial.data.map((item) => item.runtime.pid);
-  await page.getByRole("button", { name: "Run All", exact: false }).click();
+  await page.getByRole("button", { name: "Run All", exact: true }).click();
   const repeated = await page.evaluate(() => window.desktop.list());
   assert(repeated.ok);
   assert.deepEqual(
@@ -316,7 +316,11 @@ try {
   await page
     .getByRole("button", { name: "Rose terminal theme", exact: true })
     .click();
-  await page.evaluate(() => document.fonts.ready);
+  await page.evaluate(async () => {
+    // System UI may satisfy every glyph; explicitly load the bundled offline fallback.
+    await document.fonts.load('14px "Be Vietnam Pro"', "Tiếng Việt");
+    await document.fonts.ready;
+  });
   assert.equal(
     await page.evaluate(() =>
       getComputedStyle(document.documentElement)
@@ -396,7 +400,7 @@ try {
     .getByRole("link", { name: "Dashboard", exact: true })
     .click();
   report.push(
-    "Neutral rounded dashboard uses opaque white cards and NestJS primary #f23551 in both modes; Vietnamese fonts, system mode and independent terminal palette work.",
+    "Clarity-inspired flat surfaces retain NestJS primary #f23551 in both modes; offline Vietnamese fallback, system mode and independent terminal palette work.",
   );
   await page.screenshot({
     path: path.join(root, "dashboard-dark.png"),

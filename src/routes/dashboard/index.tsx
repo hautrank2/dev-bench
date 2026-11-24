@@ -41,6 +41,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { cn } from "~/lib/utils";
+import { useLocale } from "~/providers/locale/context";
 
 import { CommitDialog } from "./_components/commit-dialog";
 import { GroupFormDialog } from "./_components/group-form";
@@ -50,6 +51,8 @@ import { useDashboard } from "./hook";
 import type { DashboardProps } from "./type";
 
 export const Dashboard = (props: DashboardProps) => {
+  const { t } = useLocale();
+
   const state = useDashboard(props);
   const view = props.view ?? "dashboard";
   const running = state.projects.filter(
@@ -85,7 +88,7 @@ export const Dashboard = (props: DashboardProps) => {
         ) : (
           <Play className="size-3.5" />
         )}
-        {active(repo) ? "Stop" : "Run"}
+        {active(repo) ? t("Stop") : t("Run")}
       </Button>
       <Button
         size="sm"
@@ -93,12 +96,12 @@ export const Dashboard = (props: DashboardProps) => {
         onClick={() => void state.action(repo, "web")}
       >
         <ExternalLink />
-        Open Web
+        {t("Open Web")}
       </Button>
       <Button
         size="icon-sm"
         variant="ghost"
-        aria-label={`Logs for ${repo.name}`}
+        aria-label={t("Logs for {0}", { 0: repo.name })}
         onClick={() => state.setLogProject(repo)}
       >
         <ScrollText />
@@ -108,7 +111,7 @@ export const Dashboard = (props: DashboardProps) => {
           <Button
             size="icon-sm"
             variant="ghost"
-            aria-label={`Actions for ${repo.name}`}
+            aria-label={t("Actions for {0}", { 0: repo.name })}
           >
             <MoreHorizontal />
           </Button>
@@ -116,19 +119,19 @@ export const Dashboard = (props: DashboardProps) => {
         <DropdownMenuContent align="end" className="w-52">
           <DropdownMenuItem onSelect={() => state.setEditor({ project: repo })}>
             <Settings2 />
-            Edit Repository
+            {t("Edit Repository")}
           </DropdownMenuItem>
           <DropdownMenuItem
             onSelect={() => void state.action(repo, "copyPath")}
           >
             <Copy />
-            Copy Path
+            {t("Copy Path")}
           </DropdownMenuItem>
           <DropdownMenuItem
             onSelect={() => void state.action(repo, "terminal")}
           >
             <Terminal />
-            Open Terminal
+            {t("Open Terminal")}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
@@ -157,12 +160,12 @@ export const Dashboard = (props: DashboardProps) => {
     </div>
   );
   const title = props.projectId
-    ? (state.activeGroup?.name ?? "Project")
+    ? (state.activeGroup?.name ?? t("Project"))
     : view === "dashboard"
-      ? "Dashboard"
+      ? t("Dashboard")
       : view === "processes"
-        ? "Processes"
-        : "Projects";
+        ? t("Processes")
+        : t("Projects");
   const repositories =
     view === "dashboard"
       ? state.visibleRepositories.slice(0, 8)
@@ -177,22 +180,24 @@ export const Dashboard = (props: DashboardProps) => {
               className="mb-2 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft className="size-3.5" />
-              All projects
+              {t("All projects")}
             </Link>
           )}
-          <p className="text-xs font-medium uppercase tracking-widest text-primary">
-            {state.workspace.data?.deviceName ?? "Your workspace"}
+          <p className="text-xs font-medium uppercase tracking-widest text-primary-ink">
+            {state.workspace.data?.deviceName ?? t("Your workspace")}
           </p>
-          <h1 className="text-3xl">{title}</h1>
+          <h1>{title}</h1>
           <p className="text-muted-foreground">
             {props.projectId
               ? state.activeGroup?.description ||
-                "Repositories and services working together."
+                t("Repositories and services working together.")
               : view === "dashboard"
-                ? "Your projects, processes and next steps in one place."
+                ? t("Your projects, processes and next steps in one place.")
                 : view === "processes"
-                  ? "Processes launched by Dev Bench, grouped by their repository."
-                  : "One project. All of its repositories and services."}
+                  ? t(
+                      "Processes launched by DevBench, grouped by their repository.",
+                    )
+                  : t("One project. All of its repositories and services.")}
           </p>
         </div>
         <div className="projects-toolbar flex flex-wrap gap-2">
@@ -206,14 +211,14 @@ export const Dashboard = (props: DashboardProps) => {
                 }
               >
                 <Settings2 />
-                Edit Project
+                {t("Edit Project")}
               </Button>
               <Button
                 variant="outline"
                 onClick={() => state.setEditor({ groupId: props.projectId })}
               >
                 <Plus />
-                Add Repository
+                {t("Add Repository")}
               </Button>
               <Button
                 variant="outline"
@@ -224,7 +229,7 @@ export const Dashboard = (props: DashboardProps) => {
                 onClick={() => void state.runGroup(props.projectId ?? "", true)}
               >
                 <Square />
-                Stop project
+                {t("Stop project")}
               </Button>
               <Button
                 loading={state.batchBusy}
@@ -232,14 +237,14 @@ export const Dashboard = (props: DashboardProps) => {
                 onClick={() => void state.runGroup(props.projectId ?? "")}
               >
                 <Play />
-                Run project
+                {t("Run project")}
               </Button>
             </>
           ) : (
             <>
               <Button variant="outline" onClick={state.addGroup}>
                 <Plus />
-                Add Project
+                {t("Add Project")}
               </Button>
               <Button
                 loading={state.batchBusy}
@@ -247,7 +252,7 @@ export const Dashboard = (props: DashboardProps) => {
                 onClick={() => void state.runAll()}
               >
                 <Play />
-                Run All
+                {t("Run All")}
               </Button>
             </>
           )}
@@ -258,8 +263,8 @@ export const Dashboard = (props: DashboardProps) => {
           value={state.workspace.data?.activeSetId}
           onValueChange={(id) => void state.selectSet(id)}
         >
-          <SelectTrigger className="w-64" aria-label="Active project set">
-            <SelectValue placeholder="Project set" />
+          <SelectTrigger className="w-64" aria-label={t("Active project set")}>
+            <SelectValue placeholder={t("Project set")} />
           </SelectTrigger>
           <SelectContent>
             {state.workspace.data?.sets.map((set) => (
@@ -270,20 +275,26 @@ export const Dashboard = (props: DashboardProps) => {
           </SelectContent>
         </Select>
         <span className="text-xs text-muted-foreground">
-          {state.groups.length} projects · {state.projects.length} repositories
+          {t("{0} projects · {1} repositories", {
+            0: state.groups.length,
+            1: state.projects.length,
+          })}
         </span>
       </div>
       {view === "dashboard" && (
         <section
           className="dashboard-stats grid grid-cols-2 gap-3 xl:grid-cols-4"
-          aria-label="Workspace statistics"
+          aria-label={t("Workspace statistics")}
         >
           {[
-            { label: "Projects", value: state.groups.length },
-            { label: "Repositories & services", value: state.projects.length },
-            { label: "Running processes", value: running },
+            { label: t("Projects"), value: state.groups.length },
             {
-              label: "In startup group",
+              label: t("Repositories & services"),
+              value: state.projects.length,
+            },
+            { label: t("Running processes"), value: running },
+            {
+              label: t("In startup group"),
               value: state.projects.filter((repo) => repo.includeInRunAll)
                 .length,
             },
@@ -291,73 +302,63 @@ export const Dashboard = (props: DashboardProps) => {
             <div
               key={label}
               className={cn(
-                "panel-surface rounded-xl border p-5",
-                index === 0 &&
-                  "featured-surface border-transparent text-featured-foreground",
+                "panel-surface rounded-md border p-5",
+                index === 0 && "featured-surface",
               )}
             >
-              <p
-                className={cn(
-                  "text-xs",
-                  index === 0
-                    ? "text-featured-foreground/80"
-                    : "text-muted-foreground",
-                )}
-              >
-                {label}
-              </p>
-              <p className="mt-3 text-3xl font-semibold tabular-nums">
-                {value}
-              </p>
+              <p className="text-xs text-muted-foreground">{label}</p>
+              <p className="mt-3 text-3xl font-normal tabular-nums">{value}</p>
             </div>
           ))}
         </section>
       )}
       {state.query.isPending && (
         <p role="status" className="p-10 text-center text-muted-foreground">
-          Loading workspace…
+          {t("Loading workspace…")}
         </p>
       )}
       {(state.query.error || state.workspace.error) && (
         <p role="alert" className="whitespace-pre-wrap text-destructive">
-          {state.query.error?.message ?? state.workspace.error?.message}
+          {t(
+            state.query.error?.message ?? state.workspace.error?.message ?? "",
+          )}
         </p>
       )}
       {state.result && (
         <section
           className={cn(
-            "projects-action-result rounded-xl border bg-card p-4",
+            "projects-action-result rounded-md border bg-card p-4",
             state.result.failed && "border-destructive/40",
           )}
           role={state.result.failed ? "alert" : "status"}
         >
           <div className="flex items-center justify-between gap-3">
-            <h4>{state.result.title}</h4>
+            <h4>{t(state.result.title)}</h4>
             <Button
               size="icon-sm"
               variant="ghost"
-              aria-label="Dismiss action result"
+              aria-label={t("Dismiss action result")}
               onClick={() => state.setResult(null)}
             >
               <X />
             </Button>
           </div>
           <pre className="mt-2 max-h-52 overflow-auto whitespace-pre-wrap break-all text-xs">
-            {state.result.output}
+            {state.result.failed ? t(state.result.output) : state.result.output}
           </pre>
         </section>
       )}
       {state.batch && (
         <section
-          className="projects-batch-results rounded-xl border bg-card p-4"
-          aria-label="Batch results"
+          className="projects-batch-results rounded-md border bg-card p-4"
+          aria-label={t("Batch results")}
         >
           <div className="mb-2 flex items-center justify-between">
-            <h4>Run results</h4>
+            <h4>{t("Run results")}</h4>
             <Button
               variant="ghost"
               size="icon-sm"
-              aria-label="Dismiss Run All results"
+              aria-label={t("Dismiss Run All results")}
               onClick={() => state.setBatch(null)}
             >
               <X />
@@ -376,10 +377,10 @@ export const Dashboard = (props: DashboardProps) => {
                     : "text-muted-foreground"
                 }
               >
-                {result.outcome}
+                {t(result.outcome)}
               </span>
               <p className="whitespace-pre-wrap break-words text-xs text-muted-foreground">
-                {result.message}
+                {t(result.message)}
               </p>
             </div>
           ))}
@@ -389,7 +390,7 @@ export const Dashboard = (props: DashboardProps) => {
         <section className="projects-overview space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg">
-              {view === "dashboard" ? "Your projects" : "All projects"}
+              {view === "dashboard" ? t("Your projects") : t("All projects")}
             </h2>
             <div className="flex items-center gap-2">
               <div className="relative">
@@ -398,14 +399,14 @@ export const Dashboard = (props: DashboardProps) => {
                   value={state.search}
                   onChange={(event) => state.setSearch(event.target.value)}
                   className="w-48 pl-9"
-                  placeholder="Search projects…"
-                  aria-label="Search projects"
+                  placeholder={t("Search projects…")}
+                  aria-label={t("Search projects")}
                 />
               </div>
               <Button
                 size="icon"
                 variant={state.viewMode === "cards" ? "secondary" : "ghost"}
-                aria-label="Card view"
+                aria-label={t("Card view")}
                 aria-pressed={state.viewMode === "cards"}
                 onClick={() => state.setViewMode("cards")}
               >
@@ -414,7 +415,7 @@ export const Dashboard = (props: DashboardProps) => {
               <Button
                 size="icon"
                 variant={state.viewMode === "table" ? "secondary" : "ghost"}
-                aria-label="Table view"
+                aria-label={t("Table view")}
                 aria-pressed={state.viewMode === "table"}
                 onClick={() => state.setViewMode("table")}
               >
@@ -423,22 +424,21 @@ export const Dashboard = (props: DashboardProps) => {
             </div>
           </div>
           {!state.groups.length && !state.query.isPending && (
-            <div className="projects-empty flex flex-col items-center gap-3 rounded-xl border bg-card p-12 text-center">
+            <div className="projects-empty flex flex-col items-center gap-3 rounded-md border bg-card p-12 text-center">
               <FolderGit2 className="size-10 text-primary" />
-              <h3>Bring your repositories together</h3>
+              <h3>{t("Bring your repositories together")}</h3>
               <p className="max-w-md text-muted-foreground">
-                Create a project like OpsDesk, then add its client, server,
-                mobile app and broker.
+                {t("Create a project, then add its repositories and services.")}
               </p>
               <Button onClick={state.addGroup}>
                 <Plus />
-                Add Project
+                {t("Add Project")}
               </Button>
             </div>
           )}
           {state.groups.length > 0 && groups.length === 0 && (
             <p className="p-8 text-center text-muted-foreground">
-              No matching projects.
+              {t("No matching projects.")}
             </p>
           )}
           {state.viewMode === "cards" ? (
@@ -450,10 +450,10 @@ export const Dashboard = (props: DashboardProps) => {
                   <article
                     key={group.id}
                     data-group-id={group.id}
-                    className="projects-card panel-surface flex flex-col rounded-xl border p-5"
+                    className="projects-card panel-surface flex flex-col rounded-md border p-5"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="grid size-10 place-items-center rounded-lg bg-primary/10 text-primary">
+                      <div className="grid size-10 place-items-center rounded-md bg-primary/10 text-primary">
                         <FolderGit2 className="size-5" />
                       </div>
                       <div className="min-w-0">
@@ -464,14 +464,17 @@ export const Dashboard = (props: DashboardProps) => {
                           {group.name}
                         </Link>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          {repos.length} repositories · {activeCount} active
+                          {t("{0} repositories · {1} active", {
+                            0: repos.length,
+                            1: activeCount,
+                          })}
                         </p>
                       </div>
                       <Button
                         size="icon-sm"
                         variant="ghost"
                         className="ml-auto"
-                        aria-label={`Edit project ${group.name}`}
+                        aria-label={t("Edit project {0}", { 0: group.name })}
                         onClick={() => state.editGroup(group)}
                       >
                         <Settings2 />
@@ -479,7 +482,7 @@ export const Dashboard = (props: DashboardProps) => {
                     </div>
                     <p className="my-4 min-h-10 text-sm text-muted-foreground">
                       {group.description ||
-                        "A workspace for related repositories and services."}
+                        t("A workspace for related repositories and services.")}
                     </p>
                     <div className="mb-5 flex flex-wrap gap-1.5">
                       {repos.slice(0, 4).map((repo) => (
@@ -503,7 +506,9 @@ export const Dashboard = (props: DashboardProps) => {
                     </div>
                     <div className="mt-auto flex flex-wrap justify-between gap-2 border-t pt-4">
                       <Button variant="ghost" size="sm" asChild>
-                        <Link to={`/projects/${group.id}`}>Open project</Link>
+                        <Link to={`/projects/${group.id}`}>
+                          {t("Open project")}
+                        </Link>
                       </Button>
                       <div className="flex gap-1">
                         <Button
@@ -513,7 +518,7 @@ export const Dashboard = (props: DashboardProps) => {
                           onClick={() => void state.runGroup(group.id, true)}
                         >
                           <Square />
-                          Stop
+                          {t("Stop")}
                         </Button>
                         <Button
                           size="sm"
@@ -521,7 +526,7 @@ export const Dashboard = (props: DashboardProps) => {
                           onClick={() => void state.runGroup(group.id)}
                         >
                           <Play />
-                          Run
+                          {t("Run")}
                         </Button>
                       </div>
                     </div>
@@ -532,16 +537,16 @@ export const Dashboard = (props: DashboardProps) => {
           ) : (
             groups.length > 0 && (
               <div
-                className="projects-table overflow-x-auto rounded-xl border bg-card"
+                className="projects-table overflow-x-auto rounded-md border bg-card"
                 tabIndex={0}
               >
                 <table className="w-full text-left">
                   <thead className="border-b bg-muted/40 text-xs text-muted-foreground">
                     <tr>
-                      <th className="p-4">Project</th>
-                      <th className="p-4">Repositories</th>
-                      <th className="p-4">Active</th>
-                      <th className="p-4 text-right">Actions</th>
+                      <th className="p-4">{t("Project")}</th>
+                      <th className="p-4">{t("Repositories")}</th>
+                      <th className="p-4">{t("Active")}</th>
+                      <th className="p-4 text-right">{t("Actions")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -570,7 +575,7 @@ export const Dashboard = (props: DashboardProps) => {
                             <div className="flex justify-end gap-2">
                               <Button size="sm" variant="outline" asChild>
                                 <Link to={`/projects/${group.id}`}>
-                                  Open project
+                                  {t("Open project")}
                                 </Link>
                               </Button>
                               <Button
@@ -579,7 +584,7 @@ export const Dashboard = (props: DashboardProps) => {
                                 onClick={() => void state.runGroup(group.id)}
                               >
                                 <Play />
-                                Run
+                                {t("Run")}
                               </Button>
                             </div>
                           </td>
@@ -596,30 +601,30 @@ export const Dashboard = (props: DashboardProps) => {
       {(props.projectId || view === "processes" || view === "dashboard") && (
         <section
           className="projects-repositories space-y-4"
-          aria-label="Repositories"
+          aria-label={t("Repositories")}
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg">
               {view === "processes"
                 ? "Process list"
                 : props.projectId
-                  ? "Repositories & services"
-                  : "Repository activity"}
+                  ? t("Repositories & services")
+                  : t("Repository activity")}
             </h2>
             <div className="flex items-center gap-2">
               {view !== "dashboard" && (
                 <Input
                   value={state.search}
                   onChange={(event) => state.setSearch(event.target.value)}
-                  placeholder="Search repositories…"
-                  aria-label="Search repositories"
+                  placeholder={t("Search repositories…")}
+                  aria-label={t("Search repositories")}
                   className="w-56"
                 />
               )}
               <Button
                 variant="ghost"
                 size="icon"
-                aria-label="Refresh repositories"
+                aria-label={t("Refresh repositories")}
                 onClick={() => void state.query.refetch()}
               >
                 <RefreshCw
@@ -635,16 +640,16 @@ export const Dashboard = (props: DashboardProps) => {
             !state.activeGroup &&
             !state.workspace.isPending && (
               <p role="alert" className="text-destructive">
-                Project not found in this set.
+                {t("Project not found in this set.")}
               </p>
             )}
           {repositories.length === 0 && !state.query.isPending && (
-            <div className="rounded-xl border bg-card px-6 py-12 text-center">
+            <div className="rounded-md border bg-card px-6 py-12 text-center">
               <Activity className="mx-auto mb-3 size-7 text-muted-foreground" />
               <p className="text-muted-foreground">
                 {view === "processes"
-                  ? "No active or failed processes."
-                  : "No repositories here yet."}
+                  ? t("No active or failed processes.")
+                  : t("No repositories here yet.")}
               </p>
               {props.projectId && (
                 <Button
@@ -653,12 +658,12 @@ export const Dashboard = (props: DashboardProps) => {
                   onClick={() => state.setEditor({ groupId: props.projectId })}
                 >
                   <Plus />
-                  Add Repository
+                  {t("Add Repository")}
                 </Button>
               )}
             </div>
           )}
-          <div className="projects-repository-list divide-y overflow-hidden rounded-xl border bg-card">
+          <div className="projects-repository-list divide-y overflow-hidden rounded-md border bg-card">
             {repositories.map((repo) => (
               <article
                 key={repo.id}
@@ -679,7 +684,7 @@ export const Dashboard = (props: DashboardProps) => {
                               : "bg-muted text-muted-foreground",
                         )}
                       >
-                        {repo.runtime.status}
+                        {t(repo.runtime.status)}
                       </span>
                       {view !== "projects" && (
                         <Link
@@ -703,9 +708,9 @@ export const Dashboard = (props: DashboardProps) => {
                     <p className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                       <span className="inline-flex items-center gap-1">
                         <GitBranch className="size-3.5" />
-                        {repo.git.branch ?? "No Git"}
+                        {repo.git.branch ?? t("No Git")}
                       </span>
-                      <code>{repo.command || "No run command"}</code>
+                      <code>{repo.command || t("No run command")}</code>
                       {repo.runtime.pid && <span>PID {repo.runtime.pid}</span>}
                     </p>
                   </div>
@@ -716,24 +721,26 @@ export const Dashboard = (props: DashboardProps) => {
                     className="truncate font-mono text-xs text-muted-foreground"
                     title={repo.git.root}
                   >
-                    Git repo: {repo.git.root}
+                    {t("Git repo: ")}
+                    {repo.git.root}
                   </p>
                 )}
                 {!repo.git.root && (
                   <p className="break-words text-xs text-muted-foreground">
-                    Git unavailable: {repo.git.reason}
+                    {t("Git unavailable: ")}
+                    {t(repo.git.reason ?? "")}
                   </p>
                 )}
                 {repo.git.operation && (
                   <p role="status" className="text-xs text-primary">
-                    Git: {repo.git.operation} in progress…
+                    Git: {repo.git.operation} {t(" in progress…")}
                   </p>
                 )}
                 {(repo.runtime.error || repo.git.error) && (
-                  <p className="whitespace-pre-wrap break-words rounded-lg bg-destructive/5 p-3 text-xs text-destructive">
-                    {repo.runtime.error}
+                  <p className="whitespace-pre-wrap break-words rounded-md bg-destructive/5 p-3 text-xs text-destructive">
+                    {t(repo.runtime.error ?? "")}
                     {repo.runtime.error && repo.git.error ? "\n" : ""}
-                    {repo.git.error}
+                    {t(repo.git.error ?? "")}
                   </p>
                 )}
               </article>
@@ -742,8 +749,9 @@ export const Dashboard = (props: DashboardProps) => {
         </section>
       )}
       <p className="projects-footnote text-xs text-muted-foreground">
-        Running means the process is alive. Check Ports and Logs for service
-        details.
+        {t(
+          "Running means the process is alive. Check Ports and Logs for service details.",
+        )}
       </p>
       <GroupFormDialog
         key={

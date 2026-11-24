@@ -3,7 +3,7 @@
   "version": "1.1.3",
   "private": true,
   "description": "Local development workspaces with per-machine configuration backups",
-  "author": "Dev Bench",
+  "author": "DevBench",
   "license": "UNLICENSED",
   "type": "module",
   "main": "dist-electron/main.cjs",
@@ -14,18 +14,16 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "pnpm build && node scripts/smoke-electron.mjs",
+    "test:i18n-e2e": "pnpm build && node scripts/smoke-i18n.mjs",
     "build": "pnpm typecheck && vite build && node scripts/build-electron.mjs",
     "dist:win": "pnpm build && electron-builder --win nsis --x64 --publish never",
     "pack:win": "pnpm build && electron-builder --win --dir --x64 --publish never",
     "format": "prettier --write .",
-    "server:dev": "tsx --env-file=server/.env server/main.ts",
-    "build:server": "node scripts/build-server.mjs",
-    "server:start": "node --env-file=server/.env dist-server/main.mjs",
+    "icons": "node scripts/generate-icons.mjs",
     "dist:mac": "pnpm build && electron-builder --mac dmg zip --arm64 --x64 --publish never",
     "test:cloud-e2e": "pnpm build && tsx scripts/smoke-cloud.mts"
   },
   "dependencies": {
-    "@fastify/rate-limit": "^11.3.0",
     "@fontsource/be-vietnam-pro": "^5.3.0",
     "@fontsource/jetbrains-mono": "^5.3.0",
     "@hookform/resolvers": "^5.2.2",
@@ -33,10 +31,7 @@
     "@tanstack/react-router": "^1.140.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "fastify": "^5.12.8",
-    "google-auth-library": "^11.3.4",
     "lucide-react": "^0.468.0",
-    "mongodb": "^7.9.1",
     "radix-ui": "^1.4.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
@@ -57,7 +52,6 @@
     "electron-builder": "^26.0.12",
     "esbuild": "^0.25.0",
     "jsdom": "^26.1.0",
-    "mongodb-memory-server": "^11.4.0",
     "playwright": "^1.55.1",
     "prettier": "^3.6.2",
     "tailwindcss": "^4.1.13",
@@ -75,7 +69,7 @@
   },
   "build": {
     "appId": "com.devbench.desktop",
-    "productName": "Dev Bench",
+    "productName": "DevBench",
     "directories": {
       "output": "release"
     },
@@ -88,16 +82,19 @@
     ],
     "asar": true,
     "win": {
+      "icon": "build/icon.ico",
       "target": "nsis",
       "signExecutable": false
     },
     "nsis": {
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "artifactName": "Dev-Bench-Setup-${version}.${ext}"
+      "artifactName": "DevBench-Setup-${version}.${ext}"
     },
     "mac": {
-      "artifactName": "Dev-Bench-${version}-${arch}.${ext}",
+      "artifactName": "DevBench-${version}-${arch}.${ext}",
       "category": "public.app-category.developer-tools"
     }
   }

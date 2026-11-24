@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { cn } from "~/lib/utils";
+import { useLocale } from "~/providers/locale/context";
 
 import { useProjectForm } from "./hook";
 import type { ProjectFormDialogProps, ProjectFormProps } from "./type";
@@ -42,6 +43,8 @@ export const ProjectFormDialog = (props: ProjectFormDialogProps) => (
 );
 
 export const ProjectForm = (props: ProjectFormProps) => {
+  const { t } = useLocale();
+
   const { form, pickFolder, submit, isSubmitting } = useProjectForm(props);
   return (
     <form
@@ -51,15 +54,17 @@ export const ProjectForm = (props: ProjectFormProps) => {
     >
       <DialogHeader className="border-b px-6 py-5">
         <DialogTitle>
-          {props.isEdit ? "Edit Repository" : "Add Repository"}
+          {props.isEdit ? t("Edit Repository") : t("Add Repository")}
         </DialogTitle>
         <DialogDescription>
-          Connect a local folder to your workspace.
+          {t("Connect a local folder to your workspace.")}
         </DialogDescription>
       </DialogHeader>
       <div className="max-h-[65vh] overflow-y-auto p-6">
         <FieldSet disabled={isSubmitting}>
-          <FieldLegend className="sr-only">Project configuration</FieldLegend>
+          <FieldLegend className="sr-only">
+            {t("Project configuration")}
+          </FieldLegend>
           <FieldGroup>
             {props.groups && props.groups.length > 0 && (
               <Controller
@@ -68,7 +73,7 @@ export const ProjectForm = (props: ProjectFormProps) => {
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid || undefined}>
                     <FieldLabel htmlFor="repository-project">
-                      Project
+                      {t("Project")}
                     </FieldLabel>
                     <Select
                       value={field.value}
@@ -76,7 +81,7 @@ export const ProjectForm = (props: ProjectFormProps) => {
                       disabled={props.executionLocked}
                     >
                       <SelectTrigger id="repository-project" className="w-full">
-                        <SelectValue placeholder="Choose a project" />
+                        <SelectValue placeholder={t("Choose a project")} />
                       </SelectTrigger>
                       <SelectContent>
                         {props.groups?.map((group) => (
@@ -96,12 +101,12 @@ export const ProjectForm = (props: ProjectFormProps) => {
               name="name"
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid || undefined}>
-                  <FieldLabel htmlFor={field.name}>Name</FieldLabel>
+                  <FieldLabel htmlFor={field.name}>{t("Name")}</FieldLabel>
                   <Input
                     {...field}
                     id={field.name}
                     aria-invalid={fieldState.invalid}
-                    placeholder="OpsDesk Web"
+                    placeholder={t("Enter a repository name")}
                   />
                   <FieldError errors={[fieldState.error]} />
                 </Field>
@@ -112,7 +117,9 @@ export const ProjectForm = (props: ProjectFormProps) => {
               name="folder"
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid || undefined}>
-                  <FieldLabel htmlFor={field.name}>Project folder</FieldLabel>
+                  <FieldLabel htmlFor={field.name}>
+                    {t("Project folder")}
+                  </FieldLabel>
                   <div className="flex gap-2">
                     <Input
                       {...field}
@@ -126,9 +133,9 @@ export const ProjectForm = (props: ProjectFormProps) => {
                       variant="outline"
                       disabled={props.executionLocked}
                       onClick={() => void pickFolder()}
-                      aria-label="Browse project folder"
+                      aria-label={t("Browse project folder")}
                     >
-                      <FolderOpen /> Browse
+                      <FolderOpen /> {t(" Browse")}
                     </Button>
                   </div>
                   <FieldError errors={[fieldState.error]} />
@@ -140,7 +147,9 @@ export const ProjectForm = (props: ProjectFormProps) => {
               name="command"
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid || undefined}>
-                  <FieldLabel htmlFor={field.name}>Run command</FieldLabel>
+                  <FieldLabel htmlFor={field.name}>
+                    {t("Run command")}
+                  </FieldLabel>
                   <Input
                     {...field}
                     id={field.name}
@@ -150,8 +159,9 @@ export const ProjectForm = (props: ProjectFormProps) => {
                     className="font-mono"
                   />
                   <FieldDescription>
-                    Runs in this folder using the Windows shell. Optional until
-                    you run.
+                    {t(
+                      "Runs in this folder using the Windows shell. Optional until you run.",
+                    )}
                   </FieldDescription>
                   <FieldError errors={[fieldState.error]} />
                 </Field>
@@ -170,7 +180,9 @@ export const ProjectForm = (props: ProjectFormProps) => {
                     placeholder="http://localhost:3000"
                   />
                   <FieldDescription>
-                    Used by Open Web. Your command determines the actual port.
+                    {t(
+                      "Used by Open Web. Your command determines the actual port.",
+                    )}
                   </FieldDescription>
                   <FieldError errors={[fieldState.error]} />
                 </Field>
@@ -192,14 +204,14 @@ export const ProjectForm = (props: ProjectFormProps) => {
                     }
                   />
                   <FieldLabel htmlFor={field.name}>
-                    Include in Run All
+                    {t("Include in Run All")}
                   </FieldLabel>
                 </Field>
               )}
             />
             {props.executionLocked && (
               <FieldDescription>
-                Stop this project to change its folder or run command.
+                {t("Stop this project to change its folder or run command.")}
               </FieldDescription>
             )}
             <FieldError errors={[form.formState.errors.root]} />
@@ -213,10 +225,10 @@ export const ProjectForm = (props: ProjectFormProps) => {
           disabled={isSubmitting}
           onClick={() => props.onOpenChange(false)}
         >
-          Cancel
+          {t("Cancel")}
         </Button>
         <Button type="submit" loading={isSubmitting}>
-          {props.isEdit ? "Save Repository" : "Add Repository"}
+          {props.isEdit ? t("Save Repository") : t("Add Repository")}
         </Button>
       </DialogFooter>
     </form>

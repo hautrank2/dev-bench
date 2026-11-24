@@ -1,4 +1,5 @@
 node_modules/
+.vite/
 dist/
 dist-electron/
 release/
@@ -7,5 +8,3 @@ coverage/
 *.log
 .env*
 !.env.example
-
-dist-server/

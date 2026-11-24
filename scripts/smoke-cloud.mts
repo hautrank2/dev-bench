@@ -1,35 +1,21 @@
 import assert from "node:assert/strict";
 import { mkdir, mkdtemp, readFile } from "node:fs/promises";
 import path from "node:path";
-import { MongoClient } from "mongodb";
-import { MongoMemoryServer } from "mongodb-memory-server";
 import { _electron, type ElectronApplication, type Page } from "playwright";
-
-import { createServer } from "../server/app";
-import { collections, initializeDatabase } from "../server/database";
 
 const artifacts = path.resolve(".test-artifacts");
 await mkdir(artifacts, { recursive: true });
 const root = await mkdtemp(path.join(artifacts, "cloud UI tiếng Việt "));
 const userData = path.join(root, "user-data");
-const mongo = await MongoMemoryServer.create({
-  binary: {
-    version: "8.0.17",
-    downloadDir: path.join(artifacts, "mongodb-binaries"),
-  },
-});
-const client = await new MongoClient(mongo.getUri()).connect();
-const db = client.db("desktop_smoke");
-await initializeDatabase(db);
-const server = await createServer(db, {
-  authorizationUrl: (state) =>
-    `https://accounts.google.com/test?state=${state}`,
-  exchange: async (code, verifier, nonce) => {
-    assert(verifier && nonce);
-    return { sub: code, email: `${code}@gmail.com`, name: "Cloud Test" };
-  },
-});
-const origin = await server.listen({ port: 0, host: "127.0.0.1" });
+// Start the separate .NET test executable with --serve first. This script never
+// loads backend source or real Google credentials. Use a fresh test harness.
+const origin = process.env.DEV_BENCH_TEST_API_ORIGIN;
+if (!origin || new URL(origin).hostname !== "127.0.0.1")
+  throw new Error(
+    "Start dev-bench-server test harness with --serve, then set DEV_BENCH_TEST_API_ORIGIN=http://127.0.0.1:14318",
+  );
+const health = await fetch(`${origin}/health`);
+assert(health.ok, "The .NET test harness is unavailable");
 const env = { ...process.env, DEV_BENCH_TEST_USER_DATA: userData };
 delete env.ELECTRON_RUN_AS_NODE;
 delete env.DEV_BENCH_DEV_URL;
@@ -108,7 +94,6 @@ try {
   await window
     .getByRole("button", { name: "Preview restore", exact: true })
     .waitFor();
-  assert.equal(await collections(db).backups.countDocuments(), 1);
   await window.screenshot({
     path: path.join(root, "cloud-signed-in.png"),
     fullPage: true,
@@ -169,9 +154,9 @@ try {
         passed: true,
         artifacts: root,
         checks: [
-          "Google identity boundary stubbed only in test; real API and MongoDB",
+          "Google identity stubbed only by separate .NET test harness; real HTTP API",
           "Desktop encrypted session persisted across restart",
-          "Backup and preview/restore via real UI/IPC/HTTP/MongoDB",
+          "Backup and preview/restore via real UI/IPC/HTTP to .NET backend",
           "Restore creates a separate local set",
           "Sign-out deletes local credentials; another account cannot see backups",
         ],
@@ -188,7 +173,4 @@ try {
   throw error;
 } finally {
   await app?.close().catch(() => undefined);
-  await server.close();
-  await client.close();
-  await mongo.stop();
 }

@@ -17,9 +17,9 @@ import {
   Settings2,
   Sparkles,
   Sun,
-  Terminal,
 } from "lucide-react";
 
+import appLogo from "~/assets/dev-bench.svg";
 import { Button } from "~/components/ui/button";
 import {
   DropdownMenu,
@@ -35,39 +35,53 @@ import {
   SheetTitle,
 } from "~/components/ui/sheet";
 import { cn } from "~/lib/utils";
+import { useLocale } from "~/providers/locale/context";
 
 import { useAppLayout } from "./hook";
 import type { AppLayoutProps } from "./type";
 
 export const AppLayout = (props: AppLayoutProps) => {
+  const { t } = useLocale();
+
   const state = useAppLayout(props);
   const brand = (collapsed = false) => (
     <Link
       to="/"
-      aria-label="Dev Bench home"
-      title="Dev Bench"
+      aria-label="DevBench home"
+      title="DevBench"
       className={cn(
         "layout-brand flex items-center gap-3 font-semibold",
         collapsed && "justify-center",
       )}
     >
-      <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
-        <Terminal className="size-4" />
+      <img
+        src={appLogo}
+        alt=""
+        aria-hidden="true"
+        width={36}
+        height={36}
+        className="layout-brand-mark size-9 shrink-0"
+      />
+      <span
+        className={
+          collapsed ? "sr-only" : "text-base font-semibold tracking-tight"
+        }
+      >
+        Dev<span className="font-normal">Bench</span>
       </span>
-      <span className={collapsed ? "sr-only" : undefined}>Dev Bench</span>
     </Link>
   );
   const navigation = (collapsed = false) => (
     <nav
-      className="layout-navigation flex min-h-0 flex-1 flex-col gap-1.5"
-      aria-label="Main navigation"
+      className="layout-navigation flex min-h-0 flex-1 flex-col gap-1"
+      aria-label={t("Main navigation")}
     >
       <Link
         to="/"
-        aria-label="Dashboard"
-        title={collapsed ? "Dashboard" : undefined}
+        aria-label={t("Dashboard")}
+        title={collapsed ? t("Dashboard") : undefined}
         className={cn(
-          "flex items-center gap-3 rounded-lg px-3 py-2.5",
+          "flex items-center gap-3 rounded-md px-3 py-2",
           collapsed && "justify-center px-0",
           state.pathname === "/"
             ? "bg-sidebar-accent text-sidebar-accent-foreground"
@@ -75,11 +89,13 @@ export const AppLayout = (props: AppLayoutProps) => {
         )}
       >
         <LayoutDashboard className="size-4" />
-        <span className={collapsed ? "sr-only" : undefined}>Dashboard</span>
+        <span className={collapsed ? "sr-only" : undefined}>
+          {t("Dashboard")}
+        </span>
       </Link>
       <div
         className={cn(
-          "flex items-center rounded-lg",
+          "flex items-center rounded-md",
           state.pathname.startsWith("/projects")
             ? "bg-sidebar-accent text-sidebar-accent-foreground"
             : "text-sidebar-foreground hover:bg-muted",
@@ -87,15 +103,17 @@ export const AppLayout = (props: AppLayoutProps) => {
       >
         <Link
           to="/projects"
-          aria-label="Projects"
-          title={collapsed ? "Projects" : undefined}
+          aria-label={t("Projects")}
+          title={collapsed ? t("Projects") : undefined}
           className={cn(
-            "flex min-w-0 flex-1 items-center gap-3 px-3 py-2.5",
+            "flex min-w-0 flex-1 items-center gap-3 px-3 py-2",
             collapsed && "justify-center px-0",
           )}
         >
           <FolderGit2 className="size-4" />
-          <span className={collapsed ? "sr-only" : undefined}>Projects</span>
+          <span className={collapsed ? "sr-only" : undefined}>
+            {t("Projects")}
+          </span>
           {!collapsed && (
             <span className="ml-auto text-xs">
               {state.workspace.data?.groups.length ?? 0}
@@ -106,7 +124,7 @@ export const AppLayout = (props: AppLayoutProps) => {
           <Button
             size="icon-sm"
             variant="ghost"
-            aria-label="Expand projects"
+            aria-label={t("Expand projects")}
             aria-expanded={state.projectsOpen}
             onClick={() => state.setProjectsOpen(!state.projectsOpen)}
           >
@@ -122,7 +140,7 @@ export const AppLayout = (props: AppLayoutProps) => {
                 <Button
                   size="icon-xs"
                   variant="ghost"
-                  aria-label={`Expand ${group.name}`}
+                  aria-label={t("Expand {0}", { 0: group.name })}
                   aria-expanded={state.expanded.includes(group.id)}
                   onClick={() => state.toggleProject(group.id)}
                 >
@@ -171,16 +189,16 @@ export const AppLayout = (props: AppLayoutProps) => {
           ))}
           {state.workspace.data?.groups.length === 0 && (
             <p className="px-3 py-2 text-xs text-muted-foreground">
-              No projects yet
+              {t("No projects yet")}
             </p>
           )}
         </div>
       )}
       {[
-        { path: "/processes", label: "Processes", icon: Activity },
-        { path: "/ports", label: "Ports", icon: Network },
-        { path: "/stats", label: "Stats", icon: BarChart3 },
-        { path: "/utilities", label: "Utilities", icon: Sparkles },
+        { path: "/processes", label: t("Processes"), icon: Activity },
+        { path: "/ports", label: t("Ports"), icon: Network },
+        { path: "/stats", label: t("Stats"), icon: BarChart3 },
+        { path: "/utilities", label: t("Utilities"), icon: Sparkles },
       ].map(({ path, label, icon: Icon }) => (
         <Link
           key={path}
@@ -188,7 +206,7 @@ export const AppLayout = (props: AppLayoutProps) => {
           aria-label={label}
           title={collapsed ? label : undefined}
           className={cn(
-            "flex items-center gap-3 rounded-lg px-3 py-2.5",
+            "flex items-center gap-3 rounded-md px-3 py-2",
             collapsed && "justify-center px-0",
             state.pathname === path
               ? "bg-sidebar-accent text-sidebar-accent-foreground"
@@ -202,11 +220,11 @@ export const AppLayout = (props: AppLayoutProps) => {
       {collapsed ? (
         <div className="my-3 border-t" />
       ) : (
-        <h6 className="mb-1 mt-7 px-3 text-muted-foreground">System</h6>
+        <h6 className="mb-1 mt-7 px-3 text-muted-foreground">{t("System")}</h6>
       )}
       {[
         { path: "/hosts", label: "Hosts", icon: Globe },
-        { path: "/config-files", label: "Config Files", icon: Files },
+        { path: "/config-files", label: t("Config Files"), icon: Files },
       ].map(({ path, label, icon: Icon }) => (
         <Link
           key={path}
@@ -214,7 +232,7 @@ export const AppLayout = (props: AppLayoutProps) => {
           aria-label={label}
           title={collapsed ? label : undefined}
           className={cn(
-            "flex items-center gap-3 rounded-lg px-3 py-2.5",
+            "flex items-center gap-3 rounded-md px-3 py-2",
             collapsed && "justify-center px-0",
             state.pathname === path
               ? "bg-sidebar-accent text-sidebar-accent-foreground"
@@ -227,14 +245,16 @@ export const AppLayout = (props: AppLayoutProps) => {
       ))}
       <div className="mt-auto space-y-1.5 pt-8">
         {!collapsed && (
-          <h6 className="mb-2 px-3 text-muted-foreground">Preferences</h6>
+          <h6 className="mb-2 px-3 text-muted-foreground">
+            {t("Preferences")}
+          </h6>
         )}
         <Link
           to="/settings"
-          aria-label="Settings"
-          title={collapsed ? "Settings" : undefined}
+          aria-label={t("Settings")}
+          title={collapsed ? t("Settings") : undefined}
           className={cn(
-            "flex items-center gap-3 rounded-lg px-3 py-2.5",
+            "flex items-center gap-3 rounded-md px-3 py-2",
             collapsed && "justify-center px-0",
             state.pathname === "/settings"
               ? "bg-sidebar-accent text-sidebar-accent-foreground"
@@ -242,16 +262,18 @@ export const AppLayout = (props: AppLayoutProps) => {
           )}
         >
           <Settings2 className="size-4" />
-          <span className={collapsed ? "sr-only" : undefined}>Settings</span>
+          <span className={collapsed ? "sr-only" : undefined}>
+            {t("Settings")}
+          </span>
         </Link>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              aria-label={`Theme: ${state.theme.theme}`}
-              title={`Theme: ${state.theme.theme}`}
+              aria-label={t("Theme: {0}", { 0: t(state.theme.theme) })}
+              title={t("Theme: {0}", { 0: t(state.theme.theme) })}
               className={cn(
-                "layout-theme-trigger h-10 w-full justify-start gap-3 rounded-lg px-3 text-sidebar-foreground",
+                "layout-theme-trigger h-10 w-full justify-start gap-3 rounded-md px-3 text-sidebar-foreground",
                 collapsed && "justify-center px-0",
               )}
             >
@@ -263,7 +285,7 @@ export const AppLayout = (props: AppLayoutProps) => {
                 <Sun />
               )}
               <span className={collapsed ? "sr-only" : "capitalize"}>
-                {state.theme.theme}
+                {t(state.theme.theme)}
               </span>
               {!collapsed && (
                 <ChevronDown className="ml-auto size-3.5 text-muted-foreground" />
@@ -274,7 +296,7 @@ export const AppLayout = (props: AppLayoutProps) => {
             side="right"
             align="end"
             sideOffset={12}
-            className="layout-theme-menu min-w-44 rounded-xl p-1.5"
+            className="layout-theme-menu min-w-44 rounded-md p-1.5"
           >
             <DropdownMenuRadioGroup
               value={state.theme.theme}
@@ -282,15 +304,15 @@ export const AppLayout = (props: AppLayoutProps) => {
             >
               <DropdownMenuRadioItem value="light">
                 <Sun />
-                Light
+                {t("Light")}
               </DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="dark">
                 <Moon />
-                Dark
+                {t("Dark")}
               </DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="system">
                 <Monitor />
-                System
+                {t("System")}
               </DropdownMenuRadioItem>
             </DropdownMenuRadioGroup>
           </DropdownMenuContent>
@@ -308,7 +330,7 @@ export const AppLayout = (props: AppLayoutProps) => {
           state.collapsed ? "w-[76px]" : "w-60",
         )}
       >
-        <div className="layout-sidebar-brand flex h-[50px] shrink-0 items-center justify-center border-b px-4">
+        <div className="layout-sidebar-brand flex h-[50px] shrink-0 items-center justify-center border-b border-header-border bg-header px-4 text-header-foreground">
           <div className="w-full">{brand(state.collapsed)}</div>
         </div>
         <div
@@ -321,44 +343,47 @@ export const AppLayout = (props: AppLayoutProps) => {
         </div>
       </aside>
       <div className="layout-content flex min-h-0 min-w-0 flex-1 flex-col">
-        <header className="layout-header flex h-[50px] shrink-0 items-center justify-between gap-4 border-b bg-card px-5">
+        <header className="layout-header flex h-[50px] shrink-0 items-center justify-between gap-4 border-b border-header-border bg-header px-5 text-header-foreground">
           <div className="flex min-w-0 items-center gap-3">
             <Button
               variant="ghost"
               size="icon-sm"
               aria-label={
-                state.collapsed ? "Expand sidebar" : "Collapse sidebar"
+                state.collapsed ? t("Expand sidebar") : t("Collapse sidebar")
               }
               aria-expanded={!state.collapsed}
               aria-controls="desktop-sidebar"
-              title={state.collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              title={
+                state.collapsed ? t("Expand sidebar") : t("Collapse sidebar")
+              }
               onClick={state.toggleCollapsed}
-              className="layout-sidebar-toggle hidden text-muted-foreground lg:inline-flex"
+              className="layout-sidebar-toggle hidden text-header-muted hover:bg-header-border hover:text-header-foreground lg:inline-flex"
             >
               {state.collapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
             </Button>
             <Button
-              className="lg:hidden"
+              className="text-header-muted hover:bg-header-border hover:text-header-foreground lg:hidden"
               variant="ghost"
               size="icon-sm"
-              aria-label="Open navigation"
+              aria-label={t("Open navigation")}
               onClick={() => state.setMobileOpen(true)}
             >
               <Menu />
             </Button>
-            <span className="truncate text-xs font-medium text-muted-foreground">
-              {state.workspace.data?.deviceName ?? "Local workspace"}
+            <span className="truncate text-sm text-header-muted">
+              {state.workspace.data?.deviceName ?? t("Local workspace")}
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="hidden text-xs text-muted-foreground sm:block">
-              {state.cloud.data?.account?.email ?? "Local mode"}
+            <span className="hidden text-xs text-header-muted sm:block">
+              {state.cloud.data?.account?.email ?? t("Local mode")}
             </span>
             <Button
               variant="ghost"
               size="icon-sm"
-              aria-label="Open settings"
+              aria-label={t("Open settings")}
               onClick={state.openSettings}
+              className="text-header-muted hover:bg-header-border hover:text-header-foreground"
             >
               <Settings2 />
             </Button>

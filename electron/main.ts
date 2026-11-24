@@ -7,6 +7,7 @@ import {
   shell,
   type IpcMainInvokeEvent,
 } from "electron";
+import { cpSync, existsSync } from "node:fs";
 import path from "node:path";
 import { readFile, stat, writeFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
@@ -21,6 +22,7 @@ import {
 } from "../shared/contracts";
 import { ConfigStore, assertFolder, errorMessage } from "./services/config";
 import { CloudService } from "./services/cloud";
+import { LocaleService } from "./services/locale";
 import {
   appearanceSchema,
   backupSchema,
@@ -57,9 +59,11 @@ const processes = new ProcessManager(changed);
 const git = new GitService(changed);
 let store: ConfigStore;
 let cloud: CloudService;
+let locale: LocaleService;
+const nativeT = (message: string) => locale?.t(message) ?? message;
 let pendingImport: ImportPreview | null = null;
 let workspaceChanging = false;
-app.setName("Dev Bench");
+app.setName("DevBench");
 const devUrl =
   !app.isPackaged && process.env.DEV_BENCH_DEV_URL === "http://127.0.0.1:5173"
     ? process.env.DEV_BENCH_DEV_URL
@@ -127,6 +131,9 @@ const handle = <S extends z.ZodType, T>(
 };
 
 const registerActions = () => {
+  handle("settings:language", z.enum(["en", "vi"]), (language) =>
+    locale.setLanguage(language),
+  );
   const repositoryViews = async () =>
     Promise.all(
       store.list().map(async (repo) => ({
@@ -248,9 +255,9 @@ const registerActions = () => {
   handle("workspace:export", appearanceSchema, async (appearance) => {
     const snapshot = store.snapshot(appearance);
     const result = await dialog.showSaveDialog({
-      title: "Export project set",
+      title: nativeT("Export project set"),
       defaultPath: "dev-bench-project-set.json",
-      filters: [{ name: "JSON configuration", extensions: ["json"] }],
+      filters: [{ name: nativeT("JSON configuration"), extensions: ["json"] }],
     });
     if (result.canceled || !result.filePath) return null;
     await writeFile(result.filePath, JSON.stringify(snapshot, null, 2), "utf8");
@@ -258,9 +265,9 @@ const registerActions = () => {
   });
   handle("workspace:preview-import", z.undefined(), async () => {
     const result = await dialog.showOpenDialog({
-      title: "Import project set",
+      title: nativeT("Import project set"),
       properties: ["openFile"],
-      filters: [{ name: "JSON configuration", extensions: ["json"] }],
+      filters: [{ name: nativeT("JSON configuration"), extensions: ["json"] }],
     });
     if (result.canceled || !result.filePaths[0]) return null;
     if ((await stat(result.filePaths[0])).size > 2 * 1024 * 1024)
@@ -361,10 +368,12 @@ const requestQuit = async () => {
     if (ids.length) {
       const { response } = await dialog.showMessageBox({
         type: "question",
-        title: "Projects are still running",
-        message: "Stop all dashboard processes and quit?",
-        detail: "Processes started outside Dev Bench will keep running.",
-        buttons: ["Stop All and Quit", "Cancel"],
+        title: nativeT("Projects are still running"),
+        message: nativeT("Stop all dashboard processes and quit?"),
+        detail: nativeT(
+          "Processes started outside DevBench will keep running.",
+        ),
+        buttons: [nativeT("Stop All and Quit"), nativeT("Cancel")],
         defaultId: 1,
         cancelId: 1,
       });
@@ -383,7 +392,7 @@ const requestQuit = async () => {
       const errors = results.filter((result) => result.status === "rejected");
       if (errors.length || processes.activeIds().length) {
         dialog.showErrorBox(
-          "Could not stop all projects",
+          nativeT("Could not stop all projects"),
           errors
             .map((result) =>
               result.status === "rejected" ? errorMessage(result.reason) : "",
@@ -404,6 +413,18 @@ const requestQuit = async () => {
 // Isolate automated app runs from the user's normal saved projects.
 if (process.env.DEV_BENCH_TEST_USER_DATA) {
   app.setPath("userData", process.env.DEV_BENCH_TEST_USER_DATA);
+} else {
+  const directory = path.join(app.getPath("appData"), "DevBench");
+  const legacyDirectory = path.join(app.getPath("appData"), "Dev Bench");
+  // Preserve projects, cloud sessions and UI preferences from the old name.
+  if (!existsSync(directory) && existsSync(legacyDirectory)) {
+    cpSync(legacyDirectory, directory, {
+      recursive: true,
+      errorOnExist: true,
+      force: false,
+    });
+  }
+  app.setPath("userData", directory);
 }
 if (!app.requestSingleInstanceLock()) app.quit();
 else {
@@ -416,19 +437,27 @@ else {
     .then(async () => {
       await hydrateLoginPath();
       app.setAppUserModelId("com.devbench.desktop");
+      locale = new LocaleService(app.getPath("userData"));
+      await locale.load();
       store = new ConfigStore(
         path.join(app.getPath("userData"), "projects.json"),
       );
       await store
         .load()
         .catch((error: unknown) =>
-          dialog.showErrorBox("Configuration error", errorMessage(error)),
+          dialog.showErrorBox(
+            nativeT("Configuration error"),
+            nativeT(errorMessage(error)),
+          ),
         );
       cloud = new CloudService(app.getPath("userData"), changed);
       await cloud
         .load()
         .catch((error: unknown) =>
-          dialog.showErrorBox("Cloud configuration error", errorMessage(error)),
+          dialog.showErrorBox(
+            nativeT("Cloud configuration error"),
+            nativeT(errorMessage(error)),
+          ),
         );
       registerActions();
       window = new BrowserWindow({
@@ -436,7 +465,12 @@ else {
         height: 840,
         minWidth: 720,
         minHeight: 480,
-        title: "Dev Bench",
+        title: "DevBench",
+        icon: path.join(
+          __dirname,
+          "assets",
+          process.platform === "win32" ? "icon.ico" : "icon.png",
+        ),
         autoHideMenuBar: true,
         webPreferences: {
           preload: path.join(__dirname, "preload.cjs"),
@@ -460,7 +494,10 @@ else {
       else await window.loadFile(rendererFile);
     })
     .catch((error: unknown) => {
-      dialog.showErrorBox("Dev Bench failed to start", errorMessage(error));
+      dialog.showErrorBox(
+        nativeT("DevBench failed to start"),
+        nativeT(errorMessage(error)),
+      );
       app.quit();
     });
   app.on("before-quit", (event) => {

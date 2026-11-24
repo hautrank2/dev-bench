@@ -3,10 +3,12 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { projectsApi } from "~/api/api-list/projects";
+import { useLocale } from "~/providers/locale/context";
 
 import type { UseInspectProps } from "./type";
 
 export const useInspect = (props: UseInspectProps) => {
+  const { t } = useLocale();
   const [search, setSearch] = useState("");
   const [showSystem, setShowSystem] = useState(false);
   const workspace = useQuery({
@@ -75,7 +77,7 @@ export const useInspect = (props: UseInspectProps) => {
       try {
         await projectsApi.openConfigFile({ repositoryId, fileName });
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : String(error));
+        toast.error(t(error instanceof Error ? error.message : String(error)));
       }
     },
   };

@@ -26,7 +26,6 @@
     "electron",
     "shared",
     "tests",
-    "server",
     "vite.config.ts",
     "vitest.config.ts"
   ]

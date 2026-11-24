@@ -23,7 +23,8 @@
    migrate v1. Chuyển set khi không còn process của dashboard đang chạy.
 3. Export JSON qua Save dialog; import thành set mới, không ghi đè/khởi chạy.
    Giữ path cũ kể cả khi chưa tồn tại để người dùng sửa sau reset máy.
-4. Fastify + MongoDB; Google OpenID Connect qua browser hệ thống. Account
+4. Backend riêng `dev-bench-server`: ASP.NET Core .NET 10 + MongoDB
+   (thay Fastify khi tách repo); Google OpenID Connect qua browser hệ thống. Account
    theo Google sub; session từng thiết bị, hash ở server, mã hóa ở desktop.
 5. Cloud là snapshot bất biến theo account/device/set, backup thủ công;
    restore xác nhận import set mới. Không đồng bộ source/process hoặc chạy xa.

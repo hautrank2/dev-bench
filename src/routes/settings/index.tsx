@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import {
   Check,
   Cloud,
@@ -16,7 +17,6 @@ import {
   Terminal,
   Upload,
 } from "lucide-react";
-import { Link } from "@tanstack/react-router";
 import { Controller } from "react-hook-form";
 
 import { terminalThemeSchema, themeSchema } from "@shared/workspace";
@@ -47,11 +47,14 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { cn } from "~/lib/utils";
+import { useLocale } from "~/providers/locale/context";
 
 import { useSettings } from "./hook";
 import type { SettingsProps } from "./type";
 
 export const Settings = (props: SettingsProps) => {
+  const { t, language, setLanguage, dateLocale } = useLocale();
+
   const state = useSettings(props);
   const selectedSet = state.workspace.data?.sets.find(
     (set) => set.id === state.workspace.data?.activeSetId,
@@ -65,31 +68,34 @@ export const Settings = (props: SettingsProps) => {
               to="/projects"
               className="inline-flex text-xs text-muted-foreground hover:text-foreground"
             >
-              Back to projects
+              {t("Back to projects")}
             </Link>
-            <p className="text-xs font-medium uppercase tracking-widest text-primary">
-              Your workspace, your way
+            <p className="text-xs font-medium uppercase tracking-widest text-primary-ink">
+              {t("Your workspace, your way")}
             </p>
-            <h1 className="text-3xl">Settings</h1>
+            <h1>{t("Settings")}</h1>
             <p className="text-muted-foreground">
-              A familiar place to work, on every machine.
+              {t("A familiar place to work, on every machine.")}
             </p>
           </div>
           <div className="settings-section-links flex flex-wrap gap-2">
-            {["appearance", "terminal", "projects", "account"].map(
+            {["language", "appearance", "terminal", "projects", "account"].map(
               (section) => (
                 <Button
                   key={section}
                   variant={state.section === section ? "secondary" : "ghost"}
                   size="sm"
-                  className="capitalize"
                   onClick={() => state.scrollTo(section)}
                 >
                   {section === "projects"
-                    ? "Project sets"
+                    ? t("Project sets")
                     : section === "account"
-                      ? "Account & backup"
-                      : section}
+                      ? t("Account & backup")
+                      : section === "language"
+                        ? t("Language")
+                        : section === "appearance"
+                          ? t("Appearance")
+                          : "Terminal"}
                 </Button>
               ),
             )}
@@ -97,59 +103,92 @@ export const Settings = (props: SettingsProps) => {
           {state.error && (
             <div
               role="alert"
-              className="settings-error whitespace-pre-wrap rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-destructive"
+              className="settings-error whitespace-pre-wrap rounded-md border border-destructive/40 bg-destructive/5 p-4 text-destructive"
             >
-              {state.error}
+              {t(state.error)}
             </div>
           )}
           {state.workspace.error && (
             <p role="alert" className="text-destructive">
-              {state.workspace.error.message}
+              {t(state.workspace.error.message)}
             </p>
           )}
 
+          <section
+            id="settings-language"
+            className="settings-language scroll-mt-20 space-y-5"
+          >
+            <div>
+              <h2 className="text-xl">{t("Language")}</h2>
+              <p className="mt-1 text-muted-foreground">
+                {t(
+                  "Choose your preferred language. Changes apply immediately.",
+                )}
+              </p>
+            </div>
+            <Field className="max-w-sm">
+              <FieldLabel htmlFor="app-language">{t("Language")}</FieldLabel>
+              <Select
+                value={language}
+                onValueChange={(value) => {
+                  if (value === "en" || value === "vi") setLanguage(value);
+                }}
+              >
+                <SelectTrigger id="app-language" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">English</SelectItem>
+                  <SelectItem value="vi">Tiếng Việt</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {t("Language is saved on this device.")}
+              </p>
+            </Field>
+          </section>
           <section
             id="settings-appearance"
             className="settings-appearance scroll-mt-20 space-y-5"
           >
             <div>
-              <h2 className="text-xl">Appearance</h2>
+              <h2 className="text-xl">{t("Appearance")}</h2>
               <p className="mt-1 text-muted-foreground">
-                Quiet surfaces. A little personality.
+                {t("Quiet surfaces. A little personality.")}
               </p>
             </div>
             <div
               className="grid gap-3 sm:grid-cols-3"
-              aria-label="Application theme"
+              aria-label={t("Application theme")}
             >
               {[
                 {
                   value: "system",
-                  label: "System",
+                  label: t("System"),
                   icon: Monitor,
-                  description: "Follow your device",
+                  description: t("Follow your device"),
                 },
                 {
                   value: "light",
-                  label: "Light",
+                  label: t("Light"),
                   icon: Sun,
-                  description: "A clean, bright canvas",
+                  description: t("A clean, bright canvas"),
                 },
                 {
                   value: "dark",
-                  label: "Dark",
+                  label: t("Dark"),
                   icon: Moon,
-                  description: "Made for late nights",
+                  description: t("Made for late nights"),
                 },
               ].map(({ value, label, icon: Icon, description }) => (
                 <button
                   key={value}
                   type="button"
-                  aria-label={`${label} appearance`}
+                  aria-label={t("{0} appearance", { 0: label })}
                   aria-pressed={state.theme.theme === value}
                   onClick={() => state.theme.setTheme(themeSchema.parse(value))}
                   className={cn(
-                    "panel-surface flex flex-col items-start gap-3 rounded-xl border p-5 text-left transition-colors",
+                    "panel-surface flex flex-col items-start gap-3 rounded-md border p-5 text-left transition-colors",
                     "focus-visible:outline-2 focus-visible:outline-ring",
                     state.theme.theme === value
                       ? "border-primary ring-1 ring-primary/30"
@@ -169,14 +208,19 @@ export const Settings = (props: SettingsProps) => {
                 </button>
               ))}
             </div>
-            <div className="settings-type-preview panel-surface flex flex-wrap items-center justify-between gap-5 rounded-xl border p-5">
+            <div className="settings-type-preview panel-surface flex flex-wrap items-center justify-between gap-5 rounded-md border p-5">
               <div>
                 <p className="mb-2 text-xs text-muted-foreground">
-                  TYPEFACE / BE VIETNAM PRO
+                  {t("TYPEFACE / SYSTEM UI")}
                 </p>
-                <p className="text-lg font-medium">Designed to feel at home.</p>
-                <p className="mt-2 text-sm text-muted-foreground" lang="vi">
-                  Tiếng Việt rõ ràng — từ ý tưởng đến sản phẩm.
+                <p className="text-lg font-medium">
+                  {t("Designed to feel at home.")}
+                </p>
+                <p
+                  className="mt-2 text-sm text-muted-foreground"
+                  lang={language}
+                >
+                  {t("Clear typography, from ideas to delivery.")}
                 </p>
               </div>
               <span className="text-4xl font-semibold tracking-tight">Aa</span>
@@ -190,15 +234,15 @@ export const Settings = (props: SettingsProps) => {
             <div>
               <h2 className="text-xl">Terminal</h2>
               <p className="mt-1 text-muted-foreground">
-                Choose a separate palette for in-app logs and output.
+                {t("Choose a separate palette for in-app logs and output.")}
               </p>
             </div>
             <div
               className="grid grid-cols-2 gap-3 sm:grid-cols-4"
-              aria-label="Terminal theme"
+              aria-label={t("Terminal theme")}
             >
               {[
-                { value: "app", label: "Follow app" },
+                { value: "app", label: t("Follow app") },
                 { value: "midnight", label: "Midnight" },
                 { value: "paper", label: "Paper" },
                 { value: "rose", label: "Rose" },
@@ -206,7 +250,7 @@ export const Settings = (props: SettingsProps) => {
                 <button
                   key={value}
                   type="button"
-                  aria-label={`${label} terminal theme`}
+                  aria-label={t("{0} terminal theme", { 0: label })}
                   aria-pressed={state.theme.terminalTheme === value}
                   onClick={() =>
                     state.theme.setTerminalTheme(
@@ -214,7 +258,7 @@ export const Settings = (props: SettingsProps) => {
                     )
                   }
                   className={cn(
-                    "overflow-hidden rounded-xl border text-left",
+                    "overflow-hidden rounded-md border text-left",
                     state.theme.terminalTheme === value
                       ? "border-primary ring-1 ring-primary/30"
                       : "hover:border-input",
@@ -237,18 +281,19 @@ export const Settings = (props: SettingsProps) => {
             </div>
             <div
               data-terminal-theme={state.theme.terminalTheme}
-              className="settings-terminal-preview overflow-hidden rounded-xl border bg-terminal-background text-terminal-foreground"
+              className="settings-terminal-preview overflow-hidden rounded-md border bg-terminal-background text-terminal-foreground"
             >
               <div className="flex items-center gap-2 border-b px-4 py-3 text-xs text-terminal-muted">
                 <Terminal className="size-3.5" />
-                Output preview <span className="ml-auto">JetBrains Mono</span>
+                {t("Output preview ")}
+                <span className="ml-auto">JetBrains Mono</span>
               </div>
               <pre className="overflow-x-auto p-5 text-xs leading-7">
                 <span className="text-terminal-muted">
                   $ pnpm run dev{"\n"}
                 </span>
                 Dev server ready on http://localhost:3000{"\n"}
-                <span lang="vi">✓ Dự án đã sẵn sàng</span>
+                <span lang={language}>{t("✓ Project is ready")}</span>
                 {"\n"}
                 <span className="text-terminal-error">
                   Example stderr: port 3000 is already in use.
@@ -256,7 +301,7 @@ export const Settings = (props: SettingsProps) => {
               </pre>
             </div>
             <p className="text-xs text-muted-foreground">
-              External terminals keep their own appearance settings.
+              {t("External terminals keep their own appearance settings.")}
             </p>
           </section>
 
@@ -265,18 +310,22 @@ export const Settings = (props: SettingsProps) => {
             className="settings-project-sets scroll-mt-20 space-y-5 border-t pt-7"
           >
             <div>
-              <h2 className="text-xl">Project sets</h2>
+              <h2 className="text-xl">{t("Project sets")}</h2>
               <p className="mt-1 text-muted-foreground">
-                Different machines, different folders. Keep each setup together.
+                {t(
+                  "Different machines, different folders. Keep each setup together.",
+                )}
               </p>
             </div>
-            <div className="panel-surface space-y-4 rounded-xl border p-5">
+            <div className="panel-surface space-y-4 rounded-md border p-5">
               <div className="flex items-center gap-3">
                 <Laptop className="size-5 text-muted-foreground" />
                 <div>
-                  <h4>{state.workspace.data?.deviceName ?? "This device"}</h4>
+                  <h4>
+                    {state.workspace.data?.deviceName ?? t("This device")}
+                  </h4>
                   <p className="text-xs text-muted-foreground">
-                    Configuration is stored locally and works offline.
+                    {t("Configuration is stored locally and works offline.")}
                   </p>
                 </div>
               </div>
@@ -284,7 +333,7 @@ export const Settings = (props: SettingsProps) => {
                 htmlFor="project-set"
                 className="block text-sm font-medium"
               >
-                Active project set
+                {t("Active project set")}
               </label>
               <Select
                 value={state.workspace.data?.activeSetId}
@@ -297,7 +346,7 @@ export const Settings = (props: SettingsProps) => {
                 <SelectContent>
                   {state.workspace.data?.sets.map((set) => (
                     <SelectItem key={set.id} value={set.id}>
-                      {set.name} · {set.projectCount} projects
+                      {set.name} · {set.projectCount} {t(" projects")}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -305,7 +354,7 @@ export const Settings = (props: SettingsProps) => {
               <form onSubmit={state.createSet} noValidate>
                 <FieldSet disabled={!!state.busy}>
                   <FieldLegend className="sr-only">
-                    Create a project set
+                    {t("Create a project set")}
                   </FieldLegend>
                   <FieldGroup>
                     <Controller
@@ -313,11 +362,13 @@ export const Settings = (props: SettingsProps) => {
                       name="name"
                       render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid || undefined}>
-                          <FieldLabel htmlFor="set-name">Set name</FieldLabel>
+                          <FieldLabel htmlFor="set-name">
+                            {t("Set name")}
+                          </FieldLabel>
                           <Input
                             {...field}
                             id="set-name"
-                            placeholder="Work laptop, Personal Mac, Side projects…"
+                            placeholder={t("Enter a project set name")}
                             aria-invalid={fieldState.invalid}
                           />
                           <FieldError errors={[fieldState.error]} />
@@ -333,7 +384,7 @@ export const Settings = (props: SettingsProps) => {
                     disabled={!!state.busy}
                     onClick={() => void state.renameSet()}
                   >
-                    Rename active set
+                    {t("Rename active set")}
                   </Button>
                   <Button
                     type="submit"
@@ -341,23 +392,24 @@ export const Settings = (props: SettingsProps) => {
                     disabled={!!state.busy}
                   >
                     <Plus />
-                    Create set
+                    {t("Create set")}
                   </Button>
                 </div>
               </form>
               <p className="text-xs text-muted-foreground">
-                Stop running projects before switching sets. Importing creates a
-                new set.
+                {t(
+                  "Stop running projects before switching sets. Importing creates a new set.",
+                )}
               </p>
             </div>
-            <div className="settings-local-backup flex flex-wrap items-center justify-between gap-4 rounded-xl border bg-card p-5">
+            <div className="settings-local-backup flex flex-wrap items-center justify-between gap-4 rounded-md border bg-card p-5">
               <div>
                 <h4 className="flex items-center gap-2">
                   <HardDrive className="size-4" />
-                  Local export & import
+                  {t("Local export & import")}
                 </h4>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Save a JSON copy before resetting your machine.
+                  {t("Save a JSON copy before resetting your machine.")}
                 </p>
               </div>
               <div className="flex gap-2">
@@ -367,7 +419,7 @@ export const Settings = (props: SettingsProps) => {
                   onClick={() => void state.importFile()}
                 >
                   <Download />
-                  Import JSON
+                  {t("Import JSON")}
                 </Button>
                 <Button
                   variant="outline"
@@ -375,7 +427,7 @@ export const Settings = (props: SettingsProps) => {
                   onClick={() => void state.exportFile()}
                 >
                   <Upload />
-                  Export JSON
+                  {t("Export JSON")}
                 </Button>
               </div>
             </div>
@@ -386,19 +438,21 @@ export const Settings = (props: SettingsProps) => {
             className="settings-account scroll-mt-20 space-y-5 border-t pt-7"
           >
             <div>
-              <h2 className="text-xl">Account & backup</h2>
+              <h2 className="text-xl">{t("Account & backup")}</h2>
               <p className="mt-1 text-muted-foreground">
-                Your setups, ready when you need them again.
+                {t("Your setups, ready when you need them again.")}
               </p>
             </div>
-            <div className="panel-surface space-y-5 rounded-xl border p-5">
+            <div className="panel-surface space-y-5 rounded-md border p-5">
               <form
                 onSubmit={state.saveServer}
                 noValidate
                 className="settings-server-form space-y-3"
               >
                 <FieldSet disabled={!!state.busy}>
-                  <FieldLegend className="sr-only">Backup server</FieldLegend>
+                  <FieldLegend className="sr-only">
+                    {t("Backup server")}
+                  </FieldLegend>
                   <FieldGroup>
                     <Controller
                       control={state.serverForm.control}
@@ -406,7 +460,7 @@ export const Settings = (props: SettingsProps) => {
                       render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid || undefined}>
                           <FieldLabel htmlFor="backup-api-url">
-                            Backup server URL
+                            {t("Backup server URL")}
                           </FieldLabel>
                           <Input
                             {...field}
@@ -427,18 +481,21 @@ export const Settings = (props: SettingsProps) => {
                     disabled={!!state.busy}
                     loading={state.busy === "server"}
                   >
-                    Save server
+                    {t("Save server")}
                   </Button>
                 </div>
               </form>
               <div className="flex flex-wrap items-center justify-between gap-4 border-t pt-5">
                 <div>
                   <h4>
-                    {state.cloud.data?.account?.name ?? "Sign in with Google"}
+                    {state.cloud.data?.account?.name ??
+                      t("Sign in with Google")}
                   </h4>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {state.cloud.data?.account?.email ??
-                      "Create your account with Google to keep backups of all your machines."}
+                      t(
+                        "Create your account with Google to keep backups of all your machines.",
+                      )}
                   </p>
                 </div>
                 {state.cloud.data?.account ? (
@@ -448,14 +505,14 @@ export const Settings = (props: SettingsProps) => {
                     onClick={() => void state.signOut()}
                   >
                     <LogOut />
-                    Sign out
+                    {t("Sign out")}
                   </Button>
                 ) : state.cloud.data?.signingIn || state.busy === "sign-in" ? (
                   <Button
                     variant="outline"
                     onClick={() => void state.cancelSignIn()}
                   >
-                    Cancel sign-in
+                    {t("Cancel sign-in")}
                   </Button>
                 ) : (
                   <Button
@@ -463,35 +520,35 @@ export const Settings = (props: SettingsProps) => {
                     onClick={() => void state.signIn()}
                   >
                     <LogIn />
-                    Continue with Google
+                    {t("Continue with Google")}
                   </Button>
                 )}
               </div>
               {(state.cloud.data?.signingIn || state.busy === "sign-in") && (
                 <p role="status" className="text-sm text-muted-foreground">
-                  Finish signing in in your browser, then return here.
+                  {t("Finish signing in in your browser, then return here.")}
                 </p>
               )}
               <p className="flex items-start gap-2 text-xs leading-5 text-muted-foreground">
                 <ShieldCheck className="mt-0.5 size-4 shrink-0" />
-                Backups include paths, commands and appearance. Source files,
-                process logs and credentials stay on your machine. Review
-                command strings before sharing an export.
+                {t(
+                  "Backups include paths, commands and appearance. Source files, process logs and credentials stay on your machine. Review command strings before sharing an export.",
+                )}
               </p>
             </div>
-            <div className="settings-cloud-backups overflow-hidden rounded-xl border bg-card">
+            <div className="settings-cloud-backups overflow-hidden rounded-md border bg-card">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b p-5">
                 <div>
-                  <h4>Saved configurations</h4>
+                  <h4>{t("Saved configurations")}</h4>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Restore a snapshot to a new set on any machine.
+                    {t("Restore a snapshot to a new set on any machine.")}
                   </p>
                 </div>
                 <div className="flex gap-2">
                   <Button
                     variant="ghost"
                     size="icon"
-                    aria-label="Refresh cloud backups"
+                    aria-label={t("Refresh cloud backups")}
                     disabled={!state.cloud.data?.account || !!state.busy}
                     onClick={() => void state.backups.refetch()}
                   >
@@ -503,29 +560,31 @@ export const Settings = (props: SettingsProps) => {
                     onClick={() => void state.backup()}
                   >
                     <Cloud />
-                    Back up current set
+                    {t("Back up current set")}
                   </Button>
                 </div>
               </div>
               {!state.cloud.data?.account && (
                 <p className="px-5 py-10 text-center text-muted-foreground">
-                  Sign in to view your saved configurations.
+                  {t("Sign in to view your saved configurations.")}
                 </p>
               )}
               {state.cloud.data?.account && state.backups.isPending && (
                 <p role="status" className="p-5">
-                  Loading backups…
+                  {t("Loading backups…")}
                 </p>
               )}
               {state.backups.error && (
                 <p role="alert" className="p-5 text-destructive">
-                  {state.backups.error.message}
+                  {t(state.backups.error.message)}
                 </p>
               )}
               {state.cloud.data?.account &&
                 state.backups.data?.length === 0 && (
                   <p className="px-5 py-10 text-center text-muted-foreground">
-                    No backups yet. Save “{selectedSet?.name}” to get started.
+                    {t("No backups yet. Save “{0}” to get started.", {
+                      0: selectedSet?.name ?? "",
+                    })}
                   </p>
                 )}
               {state.backups.data?.map((backup) => (
@@ -538,10 +597,10 @@ export const Settings = (props: SettingsProps) => {
                     <h5>{backup.name}</h5>
                     <p className="mt-1 text-xs text-muted-foreground">
                       {backup.sourceDevice} · {backup.platform} ·{" "}
-                      {backup.projectCount} projects
+                      {backup.projectCount} {t(" projects")}
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {new Date(backup.createdAt).toLocaleString()}
+                      {new Date(backup.createdAt).toLocaleString(dateLocale)}
                     </p>
                   </div>
                   <Button
@@ -551,7 +610,7 @@ export const Settings = (props: SettingsProps) => {
                     onClick={() => void state.restore(backup.id)}
                   >
                     <Download />
-                    Preview restore
+                    {t("Preview restore")}
                   </Button>
                 </article>
               ))}
@@ -559,7 +618,7 @@ export const Settings = (props: SettingsProps) => {
           </section>
           <p className="settings-footer flex items-center gap-2 text-xs text-muted-foreground">
             <Settings2 className="size-3.5" />
-            Appearance is saved automatically on this device.
+            {t("Appearance is saved automatically on this device.")}
           </p>
         </main>
       </div>
@@ -571,24 +630,27 @@ export const Settings = (props: SettingsProps) => {
       >
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl">
           <DialogHeader>
-            <DialogTitle>Import project set</DialogTitle>
+            <DialogTitle>{t("Import project set")}</DialogTitle>
             <DialogDescription>
-              Review this configuration before creating a new local set.
+              {t("Review this configuration before creating a new local set.")}
             </DialogDescription>
           </DialogHeader>
           {state.preview && (
             <div className="settings-import-preview space-y-4">
-              <div className="rounded-lg border bg-muted/40 p-4">
+              <div className="rounded-md border bg-muted/40 p-4">
                 <h4>{state.preview.snapshot.set.name}</h4>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  From {state.preview.snapshot.sourceDevice} ·{" "}
-                  {state.preview.snapshot.set.projects.length} projects ·{" "}
-                  {state.preview.snapshot.set.repositories.length} repositories
+                  {t("From ")}
+                  {state.preview.snapshot.sourceDevice} ·{" "}
+                  {t("{0} projects · {1} repositories", {
+                    0: state.preview.snapshot.set.projects.length,
+                    1: state.preview.snapshot.set.repositories.length,
+                  })}
                 </p>
               </div>
               <div className="max-h-52 space-y-2 overflow-y-auto">
                 {state.preview.snapshot.set.repositories.map((project) => (
-                  <div key={project.id} className="rounded-lg border p-3">
+                  <div key={project.id} className="rounded-md border p-3">
                     <h5>
                       {
                         state.preview?.snapshot.set.projects.find(
@@ -601,16 +663,17 @@ export const Settings = (props: SettingsProps) => {
                       {project.folder}
                     </p>
                     <p className="mt-1 break-all font-mono text-xs text-muted-foreground">
-                      {project.command || "No command configured"}
+                      {project.command || t("No command configured")}
                     </p>
                   </div>
                 ))}
               </div>
               {state.preview.missingFolders.length > 0 && (
-                <p className="rounded-lg bg-warning/10 p-3 text-sm text-warning-ink">
-                  {state.preview.missingFolders.length} project folders are
-                  unavailable on this machine. You can fix their paths in Edit
-                  Repository after importing.
+                <p className="rounded-md bg-warning/10 p-3 text-sm text-warning-ink">
+                  {t(
+                    "{0} project folders are unavailable on this machine. You can fix their paths in Edit Repository after importing.",
+                    { 0: state.preview.missingFolders.length },
+                  )}
                 </p>
               )}
               <Field orientation="horizontal">
@@ -622,12 +685,13 @@ export const Settings = (props: SettingsProps) => {
                   }
                 />
                 <FieldLabel htmlFor="restore-appearance">
-                  Also restore appearance and terminal theme
+                  {t("Also restore appearance and terminal theme")}
                 </FieldLabel>
               </Field>
               <p className="text-xs text-muted-foreground">
-                Your existing sets are kept. Commands will not run when
-                imported.
+                {t(
+                  "Your existing sets are kept. Commands will not run when imported.",
+                )}
               </p>
             </div>
           )}
@@ -638,14 +702,14 @@ export const Settings = (props: SettingsProps) => {
               disabled={!!state.busy}
               onClick={() => state.setPreview(null)}
             >
-              Cancel
+              {t("Cancel")}
             </Button>
             <Button
               disabled={!!state.busy}
               loading={state.busy === "confirm-import"}
               onClick={() => void state.confirmImport()}
             >
-              Import as new set
+              {t("Import as new set")}
             </Button>
           </DialogFooter>
         </DialogContent>

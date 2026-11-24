@@ -2,6 +2,9 @@ import { build } from "esbuild";
 import { createServer } from "vite";
 import { spawn } from "node:child_process";
 import electron from "electron";
+import { copyBrandAssets } from "./brand-assets.mjs";
+
+await copyBrandAssets();
 await build({
   entryPoints: ["electron/main.ts", "electron/preload.ts"],
   bundle: true,

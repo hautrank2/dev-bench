@@ -6,18 +6,21 @@ import { toast } from "sonner";
 
 import type { Appearance, ImportPreview } from "@shared/workspace";
 import { projectsApi } from "~/api/api-list/projects";
+import { useLocale } from "~/providers/locale/context";
 import { useTheme } from "~/providers/theme/context";
 
 import { serverFormSchema, setFormSchema, type UseSettingsProps } from "./type";
 
 export const useSettings = (_props: UseSettingsProps) => {
+  const { t } = useLocale();
+
   const theme = useTheme();
   const client = useQueryClient();
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [restoreAppearance, setRestoreAppearance] = useState(false);
-  const [section, setSection] = useState("appearance");
+  const [section, setSection] = useState("language");
   const workspace = useQuery({
     queryKey: ["workspace"],
     queryFn: projectsApi.workspace,
@@ -91,7 +94,7 @@ export const useSettings = (_props: UseSettingsProps) => {
         await projectsApi.configureCloud(apiUrl);
         serverForm.reset({ apiUrl });
       },
-      "Backup server saved",
+      t("Backup server saved"),
     );
   });
   const createSet = setForm.handleSubmit(async ({ name }) => {
@@ -101,7 +104,7 @@ export const useSettings = (_props: UseSettingsProps) => {
         await projectsApi.createSet(name);
         setForm.reset({ name: "" });
       },
-      "Project set created",
+      t("Project set created"),
     );
   });
   const renameSet = setForm.handleSubmit(async ({ name }) => {
@@ -111,7 +114,7 @@ export const useSettings = (_props: UseSettingsProps) => {
         await projectsApi.renameSet(name);
         setForm.reset({ name: "" });
       },
-      "Project set renamed",
+      t("Project set renamed"),
     );
   });
   const importFile = () =>
@@ -136,7 +139,7 @@ export const useSettings = (_props: UseSettingsProps) => {
         }
         setPreview(null);
       },
-      "Configuration imported as a new project set",
+      t("Configuration imported as a new project set"),
     );
   return {
     theme,
@@ -168,23 +171,28 @@ export const useSettings = (_props: UseSettingsProps) => {
     exportFile: () =>
       perform("export", async () => {
         const file = await projectsApi.exportSet(appearance);
-        if (file) toast.success("Project set exported", { description: file });
+        if (file)
+          toast.success(t("Project set exported"), { description: file });
       }),
     signIn: () =>
-      perform("sign-in", () => projectsApi.signIn(), "Signed in with Google"),
+      perform(
+        "sign-in",
+        () => projectsApi.signIn(),
+        t("Signed in with Google"),
+      ),
     cancelSignIn: async () => {
       await projectsApi.cancelSignIn();
       await cloud.refetch();
     },
     signOut: () =>
-      perform("sign-out", () => projectsApi.signOut(), "Signed out"),
+      perform("sign-out", () => projectsApi.signOut(), t("Signed out")),
     selectSet: (id: string) =>
       perform("select-set", () => projectsApi.selectSet(id)),
     backup: () =>
       perform(
         "backup",
         () => projectsApi.backupSet(appearance),
-        "Project set backed up",
+        t("Project set backed up"),
       ),
   };
 };

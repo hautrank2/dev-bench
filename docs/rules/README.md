@@ -10,4 +10,4 @@
 - Component split theo bản OpsDesk: chỉ tách khi có logic thật, mọi
   type/schema trong type.ts thay cho ví dụ cũ đặt props ở index.
 - Nêu plan trước khi code; tiếp tục công việc đã giao, không chờ duyệt riêng.
-- Chỉ bộ rule trong Dev Bench được chỉnh; repo tham chiếu không bị sửa.
+- Chỉ bộ rule trong DevBench được chỉnh; repo tham chiếu không bị sửa.

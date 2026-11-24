@@ -118,6 +118,7 @@ export type BatchResult = {
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 
 export type DesktopApi = {
+  setLanguage: (language: import("./i18n").Language) => Promise<Result<void>>;
   saveGroup: (input: SaveGroup) => Promise<Result<ProjectGroup>>;
   runGroup: (id: string) => Promise<Result<BatchResult[]>>;
   stopGroup: (id: string) => Promise<Result<BatchResult[]>>;
