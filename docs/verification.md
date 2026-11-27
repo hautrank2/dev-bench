@@ -6,12 +6,17 @@
   tối đa `min(30vh, 320px)` và cuộn riêng. Thêm ô **Select all** ba trạng
   thái và số tệp đã chọn. Stage chia `git add` theo đợt để không vượt giới hạn
   dòng lệnh Windows.
-- `pnpm typecheck`, `pnpm build` qua; test 83/84, lỗi còn lại là test cũ
+- Thêm trạng thái push (chưa push, chậm hơn upstream, Pushed, No upstream) ở
+  thẻ repository, bảng Projects và hộp thoại Commit; tính từ ref cục bộ, không
+  tự fetch. Bước xác nhận có thêm nút **Commit and Push**, bị tắt khi branch
+  không có upstream; push lỗi thì commit vẫn giữ và báo lỗi riêng.
+- `pnpm typecheck`, `pnpm build` qua; test 85/86, lỗi còn lại là test cũ
   `disables Git cleanly for a non-repo`.
-- Bản build với repo Git tạm 600 tệp unstaged và 6 tệp staged: hai cột, danh
-  sách bị giới hạn chiều cao, Select all, stage đủ 600 tệp, commit; cửa sổ
-  1280×860, 900×560 và 700×620, Light/Dark, không có page error. Chưa chạy lại
-  `scripts/smoke-electron.mjs`, chưa tạo installer.
+- Bản build với repo Git tạm và bare remote, 600 tệp unstaged, 6 tệp staged:
+  hai cột, danh sách bị giới hạn chiều cao, Select all, stage đủ 600 tệp,
+  Commit and Push tới remote tạm, trạng thái đổi sang Pushed; cửa sổ 1280×860,
+  900×560 và 740×620, Light/Dark, không có page error. Chưa thử push tới remote
+  thật, chưa chạy lại `scripts/smoke-electron.mjs`, chưa tạo installer.
 
 ## Reload Git changes trên phiên app đang chạy — 26/11/2026
 

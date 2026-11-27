@@ -144,6 +144,9 @@ communication and delivery documentation are Vietnamese.
   Preserve hooks, staged data, Unicode paths/messages and authentication.
 - Pull fast-forward only. Push HEAD to resolved upstream, never force.
   Show final staged list before commit; refresh on failure, retain message.
+  Commit and Push is offered only on that confirm step and needs an upstream;
+  a failed push keeps the commit. Push status (ahead/behind/no upstream) reads
+  local refs only; never fetch to compute it.
   Never automatically stage/commit/pull/push real projects.
 - Quit with live owned processes offers Stop All and Quit / Cancel.
   A terminal in which a command was entered also asks before quitting.

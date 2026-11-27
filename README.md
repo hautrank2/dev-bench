@@ -133,6 +133,11 @@ chung được khóa để không chạy hai Git mutation đồng thời.
   Review staged files → xem toàn bộ Final staged list → Confirm Commit.
   Unstaged và Staged nằm thành hai cột, mỗi cột có chiều cao tối đa và cuộn
   riêng; chọn rất nhiều file được `git add` theo nhiều đợt.
+- Ở bước xác nhận có **Confirm Commit** và **Commit and Push** (cần upstream).
+  Push lỗi thì commit vẫn còn; push lại từ menu repository.
+- Trạng thái push cạnh số tệp thay đổi: **Pushed**, số commit chưa push, số
+  commit chậm hơn upstream hoặc **No upstream**. So với lần fetch/pull/push gần
+  nhất; DevBench không tự fetch.
 - File đã stage từ terminal cũng được hiển thị; file chưa stage không bị
   commit. Staged list đổi bên ngoài thì phải review lại.
 - Stage/commit/hook lỗi giữ message và tải staged list thực tế.
