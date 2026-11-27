@@ -122,7 +122,7 @@ try {
         .getPropertyValue("--primary")
         .trim(),
     ),
-    "#f23551",
+    "#0f766e",
   );
   await screenshot("settings-vi-dark.png");
   await app.evaluate(({ BrowserWindow }) =>

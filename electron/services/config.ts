@@ -3,6 +3,8 @@ import { mkdir, readFile, rename, stat, writeFile } from "node:fs/promises";
 import { hostname } from "node:os";
 import path from "node:path";
 
+import { runDirectory } from "./repository-directory";
+
 import {
   projectInputSchema,
   type Project,
@@ -19,7 +21,10 @@ import {
   type Workspace,
   type WorkspaceInfo,
   type SaveGroup,
+  type MoveGroup,
+  type MoveRepository,
 } from "../../shared/workspace";
+import { moveBefore } from "../../shared/order";
 
 export const errorMessage = (error: unknown) =>
   error instanceof Error ? error.message : String(error);
@@ -251,10 +256,45 @@ export class ConfigStore {
     });
   }
 
+  moveGroup({ id, beforeId }: MoveGroup) {
+    return this.transaction((next) => {
+      const set = next.sets.find((item) => item.id === next.activeSetId);
+      const group = set?.projects.find((item) => item.id === id);
+      if (!set || !group) throw new Error("Project not found");
+      set.projects = moveBefore(set.projects, group, beforeId);
+    });
+  }
+
+  moveRepository({ id, groupId, beforeId }: MoveRepository) {
+    return this.transaction((next) => {
+      const set = next.sets.find((item) => item.id === next.activeSetId);
+      const repo = set?.repositories.find((item) => item.id === id);
+      if (!set || !repo)
+        throw new Error("Project no longer exists. Refresh the dashboard.");
+      if (!set.projects.some((group) => group.id === groupId))
+        throw new Error("Select a valid project for this repository");
+      // The neighbor has to live in the destination project.
+      if (
+        beforeId &&
+        beforeId !== id &&
+        !set.repositories.some(
+          (item) => item.id === beforeId && item.groupId === groupId,
+        )
+      )
+        throw new Error("The list changed. Try again.");
+      set.repositories = moveBefore(
+        set.repositories,
+        { ...repo, groupId },
+        beforeId,
+      );
+    });
+  }
+
   save({ id, input }: SaveProject): Promise<Project> {
     return this.transaction(async (next) => {
       const values = projectInputSchema.parse(input);
       await assertFolder(values.folder);
+      if (values.workingDirectory) await assertFolder(runDirectory(values));
       if (id) this.get(id);
       const active = next.sets.find((set) => set.id === next.activeSetId);
       if (!active) throw new Error("Active project set is missing");

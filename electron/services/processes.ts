@@ -8,6 +8,7 @@ import type {
 } from "../../shared/contracts";
 import { assertFolder, errorMessage } from "./config";
 import { execute } from "./command";
+import { runDirectory } from "./repository-directory";
 
 type Session = {
   runtime: Runtime;
@@ -63,17 +64,19 @@ export class ProcessManager {
       if (!project.command)
         throw new Error("Set Run command in Edit Project before running.");
       await assertFolder(project.folder);
+      const directory = runDirectory(project);
+      if (directory !== project.folder) await assertFolder(directory);
       this.log(
         session,
         "system",
-        `\n> ${project.command}\nWorking directory: ${project.folder}\n`,
+        `\n> ${project.command}\nWorking directory: ${directory}\n`,
       );
       const windows = process.platform === "win32";
       const child = spawn(project.command, [], {
         shell: windows
           ? (process.env.ComSpec ?? "cmd.exe")
           : (process.env.SHELL ?? "/bin/sh"),
-        cwd: project.folder,
+        cwd: directory,
         windowsHide: true,
         detached: !windows,
         stdio: ["ignore", "pipe", "pipe"],

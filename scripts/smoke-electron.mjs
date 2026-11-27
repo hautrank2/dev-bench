@@ -89,8 +89,41 @@ const wait = async (condition, timeout = 15000) => {
   }
   throw new Error("Timed out waiting for smoke check");
 };
+const assertActiveSidebar = async (page, name) => {
+  const item = page
+    .locator(".layout-sidebar")
+    .getByRole("link", { name, exact: true });
+  await wait(async () =>
+    item.evaluate((element) => {
+      const active = element.closest(".bg-sidebar-accent");
+      return (
+        !!active &&
+        getComputedStyle(active).backgroundColor !== "rgba(0, 0, 0, 0)"
+      );
+    }),
+  );
+  const appearance = await item.evaluate((element) => {
+    const active = element.closest(".bg-sidebar-accent");
+    const icon = element.querySelector("svg");
+    return {
+      background: active ? getComputedStyle(active).backgroundColor : null,
+      text: getComputedStyle(element).color,
+      icon: icon ? getComputedStyle(icon).fill : null,
+      variant: icon?.getAttribute("data-variant"),
+    };
+  });
+  // Active rows are only tinted: text and icon keep the normal colors.
+  assert.notEqual(appearance.background, "rgb(15, 118, 110)");
+  assert.notEqual(appearance.text, "rgb(255, 255, 255)");
+  assert.equal(appearance.icon, appearance.text);
+  assert.equal(appearance.variant, "solid");
+};
 try {
   let page = await launch();
+  assert.equal(
+    await page.evaluate(() => localStorage.getItem("DEV_BENCH_TERMINAL_THEME")),
+    "midnight",
+  );
   assert.equal(await page.evaluate(() => typeof window.require), "undefined");
   const preferences = await application.evaluate(({ BrowserWindow }) => {
     const preferences =
@@ -144,6 +177,10 @@ try {
   await page
     .getByLabel("Description", { exact: true })
     .fill("Server and client together");
+  assert.equal(
+    await page.getByRole("dialog").locator('input[type="file"]').count(),
+    0,
+  );
   await page
     .getByRole("dialog")
     .getByRole("button", { name: "Add Project", exact: true })
@@ -192,6 +229,7 @@ try {
   const grouped = await page.evaluate(() => window.desktop.workspace());
   assert(grouped.ok);
   assert.equal(grouped.data.groups.length, 1);
+  assert.equal("coverImage" in grouped.data.groups[0], false);
   const repoList = await page.evaluate(() => window.desktop.list());
   assert(repoList.ok);
   assert.equal(new Set(repoList.data.map((repo) => repo.groupId)).size, 1);
@@ -202,6 +240,155 @@ try {
     .locator(".layout-project-tree")
     .getByText("OpsDesk Web", { exact: true })
     .waitFor();
+  const sidebar = page.locator(".layout-sidebar");
+  const webRepository = repoList.data.find(
+    (repo) => repo.name === "OpsDesk Web",
+  );
+  const apiRepository = repoList.data.find(
+    (repo) => repo.name === "OpsDesk API",
+  );
+  assert(webRepository && apiRepository);
+  await sidebar.getByRole("link", { name: "OpsDesk Web", exact: true }).click();
+  await page
+    .getByRole("heading", { name: "OpsDesk Web", exact: true, level: 1 })
+    .waitFor();
+  assert.equal(await page.locator(".projects-repository-row").count(), 1);
+  assert.equal(
+    await page
+      .getByRole("button", { name: "Run project", exact: true })
+      .count(),
+    0,
+  );
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  await wait(async () => {
+    const result = await page.evaluate(() => window.desktop.list());
+    return (
+      result.ok &&
+      result.data.find((repo) => repo.id === webRepository.id)?.runtime
+        .status === "Running" &&
+      result.data.find((repo) => repo.id === apiRepository.id)?.runtime
+        .status === "Stopped"
+    );
+  });
+  await page
+    .locator(".repository-inline-logs")
+    .getByText("ready tiếng Việt", { exact: false })
+    .waitFor();
+  const webRuntime = await page.evaluate(() => window.desktop.list());
+  assert(webRuntime.ok);
+  const webPid = webRuntime.data.find((repo) => repo.id === webRepository.id)
+    ?.runtime.pid;
+  await sidebar.getByRole("link", { name: "OpsDesk API", exact: true }).click();
+  await page
+    .getByRole("heading", { name: "OpsDesk API", exact: true, level: 1 })
+    .waitFor();
+  await page
+    .getByText("No output yet. Run this repository to see its logs here.", {
+      exact: true,
+    })
+    .waitFor();
+  assert.equal(
+    await page
+      .locator(".repository-inline-logs")
+      .getByText("ready tiếng Việt", { exact: false })
+      .count(),
+    0,
+  );
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  await wait(async () => {
+    const result = await page.evaluate(() => window.desktop.list());
+    return (
+      result.ok &&
+      result.data.every((repo) => repo.runtime.status === "Running") &&
+      result.data.find((repo) => repo.id === webRepository.id)?.runtime.pid ===
+        webPid
+    );
+  });
+  await page.getByRole("button", { name: "Stop", exact: true }).click();
+  await wait(async () => {
+    const result = await page.evaluate(() => window.desktop.list());
+    return (
+      result.ok &&
+      result.data.find((repo) => repo.id === apiRepository.id)?.runtime
+        .status === "Stopped" &&
+      result.data.find((repo) => repo.id === webRepository.id)?.runtime.pid ===
+        webPid
+    );
+  });
+  await sidebar.getByRole("link", { name: "OpsDesk Web", exact: true }).click();
+  await page
+    .getByRole("heading", { name: "OpsDesk Web", exact: true, level: 1 })
+    .waitFor();
+  await page.reload();
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.addStyleTag({
+    content:
+      "*, *::before, *::after { animation: none !important; transition: none !important; }",
+  });
+  await page
+    .getByRole("heading", { name: "OpsDesk Web", exact: true, level: 1 })
+    .waitFor();
+  await sidebar
+    .getByRole("link", { name: "OpsDesk Web", exact: true })
+    .waitFor();
+  await page
+    .locator(".repository-inline-logs")
+    .getByText("ready tiếng Việt", { exact: false })
+    .waitFor();
+  await page.screenshot({
+    path: path.join(root, "sidebar-repository-detail.png"),
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: "Stop", exact: true }).click();
+  await wait(async () => {
+    const result = await page.evaluate(() => window.desktop.list());
+    return (
+      result.ok &&
+      result.data.every((repo) => repo.runtime.status === "Stopped")
+    );
+  });
+  report.push(
+    "Sidebar opens a dedicated repository page with isolated live logs and actions; Run/Stop affect only the selected repository and direct reload restores the route/tree.",
+  );
+  await page.evaluate((route) => {
+    location.hash = route;
+  }, `/projects/${webRepository.groupId}/repositories/missing-repository`);
+  await page
+    .getByText("Repository not found in this project set.", { exact: true })
+    .waitFor();
+  assert.equal(await page.locator(".repository-inline-logs").count(), 0);
+  assert.equal(
+    await page.getByRole("button", { name: "Run", exact: true }).count(),
+    0,
+  );
+  await application.evaluate(({ BrowserWindow }) =>
+    BrowserWindow.getAllWindows()[0].setSize(760, 520),
+  );
+  await page
+    .getByRole("button", { name: "Open navigation", exact: true })
+    .click();
+  await page
+    .getByRole("dialog")
+    .getByRole("link", { name: "OpsDesk API", exact: true })
+    .click();
+  await page.getByRole("dialog").waitFor({ state: "hidden" });
+  await page
+    .getByRole("heading", { name: "OpsDesk API", exact: true, level: 1 })
+    .waitFor();
+  assert(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  );
+  await page.screenshot({
+    path: path.join(root, "sidebar-repository-mobile.png"),
+    fullPage: true,
+  });
+  await application.evaluate(({ BrowserWindow }) =>
+    BrowserWindow.getAllWindows()[0].setSize(1280, 840),
+  );
+  await page.waitForFunction(() => innerWidth > 1200);
+  await page.locator(".layout-sidebar").waitFor({ state: "visible" });
   await page
     .locator(".layout-sidebar")
     .getByRole("link", { name: "Dashboard", exact: true })
@@ -209,6 +396,16 @@ try {
   report.push(
     "One OpsDesk project contains two repositories; expandable sidebar shows both children.",
   );
+  await page
+    .getByRole("button", { name: "Edit project OpsDesk", exact: true })
+    .click();
+  assert.equal(
+    await page.getByRole("dialog").locator('input[type="file"]').count(),
+    0,
+  );
+  await page.getByRole("button", { name: "Save Project", exact: true }).click();
+  await page.getByRole("dialog").waitFor({ state: "hidden" });
+  report.push("Add/Edit Project contains no card image upload field.");
   await page.getByRole("button", { name: "Actions for OpsDesk Web" }).click();
   await page.getByRole("menuitem", { name: "Copy Path" }).click();
   await page.getByText("OpsDesk Web: Path copied", { exact: true }).waitFor();
@@ -221,6 +418,16 @@ try {
       : "Copy Path completed; clipboard readback is unavailable in this Windows session (PowerShell is also empty). Manual OS verification remains.",
   );
   await page.getByRole("button", { name: "Run All", exact: true }).click();
+  assert.equal(
+    await page
+      .getByRole("button", { name: "Run All", exact: true })
+      .evaluate((element) => getComputedStyle(element).color),
+    "rgb(255, 255, 255)",
+  );
+  assert.notEqual(
+    await sidebar.evaluate((element) => getComputedStyle(element).boxShadow),
+    "none",
+  );
   await wait(async () => {
     const result = await page.evaluate(() => window.desktop.list());
     return (
@@ -266,6 +473,7 @@ try {
   await page
     .getByLabel("Project process output")
     .getByText("ready tiếng Việt", { exact: false })
+    .last()
     .waitFor();
   await page
     .getByRole("dialog")
@@ -294,16 +502,11 @@ try {
   await page.screenshot({ path: path.join(root, "ports.png"), fullPage: true });
   await page
     .locator(".layout-sidebar")
-    .getByRole("link", { name: "Processes", exact: true })
-    .click();
-  await page.locator(".projects-repository-row").nth(1).waitFor();
-  await page
-    .locator(".layout-sidebar")
     .getByRole("link", { name: "Stats", exact: true })
     .click();
   await page.getByRole("heading", { name: "Stats", exact: true }).waitFor();
   report.push(
-    "Ports maps real descendant PIDs to both repositories; Processes and Stats show the grouped workspace.",
+    "Ports maps real descendant PIDs to both repositories; Stats shows the grouped workspace.",
   );
   await page.getByRole("button", { name: "Open settings" }).click();
   await page.getByRole("heading", { name: "Settings", exact: true }).waitFor();
@@ -313,6 +516,75 @@ try {
   await page.waitForFunction(() =>
     document.documentElement.classList.contains("dark"),
   );
+  await assertActiveSidebar(page, "Settings");
+  assert.equal(
+    await page.locator(".settings-terminal [aria-pressed]").count(),
+    4,
+  );
+  assert.equal(
+    await page
+      .getByRole("button", { name: "Dark terminal theme", exact: true })
+      .getAttribute("aria-pressed"),
+    "true",
+  );
+  assert.equal(
+    await page
+      .locator(".settings-terminal-preview")
+      .evaluate((element) => getComputedStyle(element).backgroundColor),
+    "rgb(16, 20, 30)",
+  );
+  assert.equal(
+    await page
+      .locator(".settings-type-preview")
+      .evaluate((element) => getComputedStyle(element).borderTopLeftRadius),
+    "8px",
+  );
+  await page.locator(".settings-terminal-preview").scrollIntoViewIfNeeded();
+  await page.screenshot({
+    path: path.join(root, "terminal-default-dark.png"),
+    fullPage: true,
+  });
+  for (const [label, expected] of [
+    ["Be Vietnam Pro", "Be Vietnam Pro"],
+    ["JetBrains Mono", "JetBrains Mono"],
+    ["System default", "Segoe UI"],
+    ["Be Vietnam Pro", "Be Vietnam Pro"],
+  ]) {
+    await page
+      .getByRole("combobox", { name: "Interface font", exact: true })
+      .click();
+    await page.getByRole("option", { name: label, exact: true }).click();
+    await page.waitForFunction(
+      (font) =>
+        getComputedStyle(document.body).fontFamily.startsWith(`"${font}"`),
+      expected,
+    );
+  }
+  assert(
+    await page
+      .locator(".settings-type-preview")
+      .evaluate((element) =>
+        getComputedStyle(element).fontFamily.includes("Be Vietnam Pro"),
+      ),
+  );
+  assert(
+    await page
+      .locator("[data-terminal-theme] pre")
+      .first()
+      .evaluate((element) =>
+        getComputedStyle(element).fontFamily.includes("JetBrains Mono"),
+      ),
+  );
+  report.push(
+    "Font selector applies all three choices immediately and keeps terminal output monospace.",
+  );
+  await page
+    .locator("#settings-appearance")
+    .evaluate((element) => element.scrollIntoView({ block: "start" }));
+  await page.screenshot({
+    path: path.join(root, "font-selector-dark.png"),
+    fullPage: true,
+  });
   await page
     .getByRole("button", { name: "Rose terminal theme", exact: true })
     .click();
@@ -327,7 +599,7 @@ try {
         .getPropertyValue("--primary")
         .trim(),
     ),
-    "#f23551",
+    "#0f766e",
   );
   assert(
     await page.evaluate(() =>
@@ -341,13 +613,14 @@ try {
   await page
     .getByRole("button", { name: "Light appearance", exact: true })
     .click();
+  await assertActiveSidebar(page, "Settings");
   assert.equal(
     await page.evaluate(() =>
       getComputedStyle(document.documentElement)
         .getPropertyValue("--primary")
         .trim(),
     ),
-    "#f23551",
+    "#0f766e",
   );
   assert.deepEqual(
     await page.locator(".settings-type-preview").evaluate((element) => {
@@ -400,12 +673,24 @@ try {
     .getByRole("link", { name: "Dashboard", exact: true })
     .click();
   report.push(
-    "Clarity-inspired flat surfaces retain NestJS primary #f23551 in both modes; offline Vietnamese fallback, system mode and independent terminal palette work.",
+    "VS Code-inspired flat surfaces retain teal primary #0f766e in both modes; offline Vietnamese fallback, system mode and independent terminal palette work.",
   );
   await page.screenshot({
     path: path.join(root, "dashboard-dark.png"),
     fullPage: true,
   });
+  await assertActiveSidebar(page, "Dashboard");
+  for (const name of ["Ports", "Stats", "Utilities", "Hosts", "Config Files"]) {
+    await page
+      .locator(".layout-sidebar")
+      .getByRole("link", { name, exact: true })
+      .click();
+    await assertActiveSidebar(page, name);
+  }
+  await page
+    .locator(".layout-sidebar")
+    .getByRole("link", { name: "Dashboard", exact: true })
+    .click();
   assert.equal(
     await page.getByRole("link", { name: "Themes", exact: true }).count(),
     0,
@@ -443,6 +728,7 @@ try {
   await page.waitForFunction(() =>
     document.documentElement.classList.contains("light"),
   );
+  await assertActiveSidebar(page, "Ports");
   await page.screenshot({
     path: path.join(root, "sidebar-collapsed-light.png"),
   });
@@ -454,6 +740,7 @@ try {
     .getByRole("link", { name: "Projects", exact: true })
     .click();
   await page.locator(".projects-card").waitFor();
+  await assertActiveSidebar(page, "Projects");
   await page.screenshot({ path: path.join(root, "projects-light-layout.png") });
   await page
     .getByRole("button", { name: "Collapse sidebar", exact: true })
@@ -559,6 +846,20 @@ try {
   );
 
   page = await launch();
+  const persistedWorkspace = await page.evaluate(() =>
+    window.desktop.workspace(),
+  );
+  assert(persistedWorkspace.ok);
+  assert.equal("coverImage" in persistedWorkspace.data.groups[0], false);
+  assert.equal(
+    await page.evaluate(() => localStorage.getItem("DEV_BENCH_FONT_FAMILY")),
+    "be-vietnam-pro",
+  );
+  assert(
+    await page.evaluate(() =>
+      getComputedStyle(document.body).fontFamily.includes("Be Vietnam Pro"),
+    ),
+  );
   await page
     .getByRole("button", { name: "Expand sidebar", exact: true })
     .waitFor();
@@ -671,6 +972,14 @@ try {
   const exportedSet = JSON.parse(await readFile(exported, "utf8"));
   assert.equal(exportedSet.set.repositories.length, 2);
   assert.equal(exportedSet.appearance.terminalTheme, "rose");
+  assert.equal(exportedSet.appearance.fontFamily, "be-vietnam-pro");
+  assert.equal("coverImage" in exportedSet.set.projects[0], false);
+  await page
+    .getByRole("combobox", { name: "Interface font", exact: true })
+    .click();
+  await page
+    .getByRole("option", { name: "System default", exact: true })
+    .click();
   await page.getByLabel("Set name", { exact: true }).fill("Personal Mac");
   await page.getByRole("button", { name: "Create set", exact: true }).click();
   await wait(async () => {
@@ -685,10 +994,19 @@ try {
   }, exported);
   await page.getByRole("button", { name: "Import JSON", exact: true }).click();
   await page
+    .getByRole("checkbox", {
+      name: "Also restore appearance and terminal theme",
+      exact: true,
+    })
+    .check();
+  await page
     .getByRole("dialog")
     .getByRole("button", { name: "Import as new set", exact: true })
     .click();
   await page.getByRole("dialog").waitFor({ state: "hidden" });
+  await page.waitForFunction(
+    () => document.documentElement.dataset.fontFamily === "be-vietnam-pro",
+  );
   const sets = await page.evaluate(() => window.desktop.workspace());
   assert(sets.ok);
   assert.equal(sets.data.sets.length, 3);

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { cn } from "~/lib/utils";
-import { CheckIcon } from "lucide-react";
+import { CheckIcon, MinusIcon } from "lucide-react";
 import { Checkbox as CheckboxPrimitive } from "radix-ui";
 
 /* Dùng chung cho bản tương tác và bản chỉ-để-nhìn, để hai cái không lệch nhau. */
@@ -19,14 +19,22 @@ function Checkbox({
   return (
     <CheckboxPrimitive.Root
       data-slot="checkbox"
-      className={cn(checkboxBoxClass, className)}
+      className={cn(
+        checkboxBoxClass,
+        "data-[state=indeterminate]:border-primary data-[state=indeterminate]:bg-primary data-[state=indeterminate]:text-primary-foreground",
+        className,
+      )}
       {...props}
     >
       <CheckboxPrimitive.Indicator
         data-slot="checkbox-indicator"
         className={checkboxIndicatorClass}
       >
-        <CheckIcon className="size-3.5" />
+        {props.checked === "indeterminate" ? (
+          <MinusIcon className="size-3.5" />
+        ) : (
+          <CheckIcon className="size-3.5" />
+        )}
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>
   );

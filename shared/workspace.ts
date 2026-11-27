@@ -3,10 +3,31 @@ import { z } from "zod";
 import { configSchema, projectSchema } from "./contracts";
 
 export const themeSchema = z.enum(["system", "light", "dark"]);
-export const terminalThemeSchema = z.enum(["app", "midnight", "paper", "rose"]);
+export const terminalThemeSchema = z.enum([
+  "midnight",
+  "paper",
+  "dracula",
+  "rose",
+]);
+export const defaultTerminalTheme = "midnight";
+// Values match xterm's cursorStyle; "bar" is the thin line cursor.
+export const terminalCursorSchema = z.enum(["bar", "block", "underline"]);
+export const defaultTerminalCursor = "bar";
+export const fontFamilySchema = z.enum([
+  "system",
+  "be-vietnam-pro",
+  "jetbrains-mono",
+]);
 export const appearanceSchema = z.object({
   theme: themeSchema.default("system"),
-  terminalTheme: terminalThemeSchema.default("app"),
+  // "Follow app" was removed; older exports that name it open as Dark.
+  terminalTheme: z
+    .union([
+      terminalThemeSchema,
+      z.literal("app").transform((): "midnight" => defaultTerminalTheme),
+    ])
+    .default(defaultTerminalTheme),
+  fontFamily: fontFamilySchema.optional(),
 });
 export const setNameSchema = z
   .string()
@@ -20,6 +41,14 @@ export const groupInputSchema = z.object({
 export const groupSchema = groupInputSchema.extend({ id: z.uuid() });
 export const saveGroupSchema = groupInputSchema.extend({
   id: z.uuid().optional(),
+});
+// Order is the array order; `beforeId: null` means last.
+export const moveGroupSchema = z.object({
+  id: z.uuid(),
+  beforeId: z.uuid().nullable(),
+});
+export const moveRepositorySchema = moveGroupSchema.extend({
+  groupId: z.uuid(),
 });
 export const projectSetSchema = z
   .object({
@@ -167,6 +196,31 @@ export const backupSchema = z.preprocess((raw) => {
     ? { ...old.data, schemaVersion: 2, set: upgradeLegacySet(old.data.set) }
     : raw;
 }, currentBackupSchema);
+// The backup API accepts only app/midnight/paper/rose. Dracula replaced
+// "Follow app", so it travels to and from the cloud under that name.
+export const toCloudBackup = (backup: z.infer<typeof backupSchema>) => ({
+  ...backup,
+  appearance: {
+    ...backup.appearance,
+    terminalTheme:
+      backup.appearance.terminalTheme === "dracula"
+        ? "app"
+        : backup.appearance.terminalTheme,
+  },
+});
+export const fromCloudBackup = (raw: unknown): unknown => {
+  const found = z
+    .looseObject({
+      appearance: z.looseObject({ terminalTheme: z.literal("app") }),
+    })
+    .safeParse(raw);
+  return found.success
+    ? {
+        ...found.data,
+        appearance: { ...found.data.appearance, terminalTheme: "dracula" },
+      }
+    : raw;
+};
 export const cloudUrlSchema = z
   .string()
   .url()
@@ -197,8 +251,12 @@ export const backupInfoSchema = z.object({
   createdAt: z.string(),
 });
 export type Appearance = z.infer<typeof appearanceSchema>;
+export type FontFamily = z.infer<typeof fontFamilySchema>;
+export type TerminalCursor = z.infer<typeof terminalCursorSchema>;
 export type ProjectGroup = z.infer<typeof groupSchema>;
 export type SaveGroup = z.infer<typeof saveGroupSchema>;
+export type MoveGroup = z.infer<typeof moveGroupSchema>;
+export type MoveRepository = z.infer<typeof moveRepositorySchema>;
 export type ProjectSet = z.infer<typeof projectSetSchema>;
 export type Workspace = z.infer<typeof workspaceSchema>;
 export type Backup = z.infer<typeof backupSchema>;

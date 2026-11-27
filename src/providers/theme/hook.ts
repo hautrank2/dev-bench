@@ -1,5 +1,11 @@
 import { useEffect, useState } from "react";
-import { terminalThemeSchema } from "@shared/workspace";
+import {
+  defaultTerminalCursor,
+  defaultTerminalTheme,
+  fontFamilySchema,
+  terminalCursorSchema,
+  terminalThemeSchema,
+} from "@shared/workspace";
 
 import type { Theme, UseThemeProviderProps } from "./type";
 
@@ -17,9 +23,24 @@ export const useThemeProvider = (_props: UseThemeProviderProps) => {
     const stored = terminalThemeSchema.safeParse(
       localStorage.getItem("DEV_BENCH_TERMINAL_THEME"),
     );
-    return stored.success ? stored.data : "app";
+    return stored.success ? stored.data : defaultTerminalTheme;
   });
+  const [terminalCursor, setTerminalCursor] = useState(() => {
+    const stored = terminalCursorSchema.safeParse(
+      localStorage.getItem("DEV_BENCH_TERMINAL_CURSOR"),
+    );
+    return stored.success ? stored.data : defaultTerminalCursor;
+  });
+  const [terminalCursorBlink, setTerminalCursorBlink] = useState(
+    () => localStorage.getItem("DEV_BENCH_TERMINAL_CURSOR_BLINK") !== "false",
+  );
   const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
+  const [fontFamily, setFontFamily] = useState(() => {
+    const stored = fontFamilySchema.safeParse(
+      localStorage.getItem("DEV_BENCH_FONT_FAMILY"),
+    );
+    return stored.success ? stored.data : "system";
+  });
   useEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
     const update = () => {
@@ -39,5 +60,28 @@ export const useThemeProvider = (_props: UseThemeProviderProps) => {
   useEffect(() => {
     localStorage.setItem("DEV_BENCH_TERMINAL_THEME", terminalTheme);
   }, [terminalTheme]);
-  return { theme, setTheme, terminalTheme, setTerminalTheme, resolvedTheme };
+  useEffect(() => {
+    localStorage.setItem("DEV_BENCH_TERMINAL_CURSOR", terminalCursor);
+    localStorage.setItem(
+      "DEV_BENCH_TERMINAL_CURSOR_BLINK",
+      String(terminalCursorBlink),
+    );
+  }, [terminalCursor, terminalCursorBlink]);
+  useEffect(() => {
+    document.documentElement.dataset.fontFamily = fontFamily;
+    localStorage.setItem("DEV_BENCH_FONT_FAMILY", fontFamily);
+  }, [fontFamily]);
+  return {
+    theme,
+    setTheme,
+    terminalTheme,
+    setTerminalTheme,
+    terminalCursor,
+    setTerminalCursor,
+    terminalCursorBlink,
+    setTerminalCursorBlink,
+    fontFamily,
+    setFontFamily,
+    resolvedTheme,
+  };
 };

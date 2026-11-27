@@ -1,4 +1,4 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -43,6 +43,65 @@ describe("JSON configuration", () => {
     expect(await readFile(file, "utf8")).not.toMatch(/Running|runtime|pid/);
   });
 
+  it("reorders projects and repositories and moves one between projects", async () => {
+    const folder = await fixture("config-order");
+    const file = path.join(folder, "projects.json");
+    const store = new ConfigStore(file);
+    await store.load();
+    const alpha = await store.saveGroup({ name: "Alpha", description: "" });
+    const beta = await store.saveGroup({ name: "Beta", description: "" });
+    const add = (name: string, groupId: string) =>
+      store.save({ input: projectAt(folder, { name, groupId }) });
+    const a1 = await add("a1", alpha.id);
+    const a2 = await add("a2", alpha.id);
+    const b1 = await add("b1", beta.id);
+    const names = (groupId: string) =>
+      store
+        .list()
+        .filter((repo) => repo.groupId === groupId)
+        .map((repo) => repo.name);
+
+    await store.moveGroup({ id: beta.id, beforeId: alpha.id });
+    await store.moveRepository({
+      id: a2.id,
+      groupId: alpha.id,
+      beforeId: a1.id,
+    });
+    expect(names(alpha.id)).toEqual(["a2", "a1"]);
+    await store.moveRepository({
+      id: a1.id,
+      groupId: beta.id,
+      beforeId: b1.id,
+    });
+    expect(names(beta.id)).toEqual(["a1", "b1"]);
+    await store.moveRepository({
+      id: a2.id,
+      groupId: beta.id,
+      beforeId: null,
+    });
+    expect(names(beta.id)).toEqual(["a1", "b1", "a2"]);
+    expect(names(alpha.id)).toEqual([]);
+
+    // A neighbor from another project, or an unknown project, changes nothing.
+    await expect(
+      store.moveRepository({ id: a1.id, groupId: alpha.id, beforeId: b1.id }),
+    ).rejects.toThrow("list changed");
+    await expect(
+      store.moveRepository({ id: a1.id, groupId: a2.id, beforeId: null }),
+    ).rejects.toThrow("valid project");
+    const reopened = new ConfigStore(file);
+    await reopened.load();
+    expect(reopened.info().groups.map((group) => group.name)).toEqual([
+      "Beta",
+      "Alpha",
+    ]);
+    expect(reopened.list().map((repo) => repo.name)).toEqual([
+      "a1",
+      "b1",
+      "a2",
+    ]);
+  });
+
   it("does not overwrite invalid JSON", async () => {
     const folder = await fixture("invalid");
     const file = path.join(folder, "projects.json");
@@ -75,5 +134,48 @@ describe("JSON configuration", () => {
     await expect(
       store.save({ input: { ...input, folder: path.join(folder, "missing") } }),
     ).rejects.toThrow("unavailable");
+  });
+
+  it("preserves the optional working directory through save, reopen and JSON backup restore", async () => {
+    const folder = await fixture("config-working-directory");
+    const workingDirectory = path.join("apps", "dịch vụ");
+    await mkdir(path.join(folder, workingDirectory), { recursive: true });
+    const file = path.join(folder, "projects.json");
+    const store = new ConfigStore(file);
+    await store.load();
+    const project = await store.save({
+      input: projectAt(folder, { workingDirectory }),
+    });
+    const reopened = new ConfigStore(file);
+    await reopened.load();
+    expect(reopened.get(project.id).workingDirectory).toBe(workingDirectory);
+    expect(reopened.get(project.id).folder).toBe(folder);
+    const snapshot = reopened.snapshot({
+      theme: "light",
+      terminalTheme: "midnight",
+    });
+    expect(snapshot.set.repositories[0]?.workingDirectory).toBe(
+      workingDirectory,
+    );
+    await reopened.importSet(JSON.parse(JSON.stringify(snapshot)));
+    const restored = reopened.list()[0];
+    expect(restored?.workingDirectory).toBe(workingDirectory);
+    if (!restored) throw new Error("Restored repository is missing");
+    await reopened.save({
+      id: restored.id,
+      input: { ...restored, workingDirectory: "" },
+    });
+    expect(reopened.get(restored.id).workingDirectory).toBe("");
+    await expect(
+      reopened.save({
+        input: projectAt(folder, { workingDirectory: "missing" }),
+      }),
+    ).rejects.toThrow("unavailable");
+    expect(
+      projectInputSchema.safeParse({
+        ...projectAt(folder),
+        workingDirectory: "x".repeat(4097),
+      }).success,
+    ).toBe(false);
   });
 });

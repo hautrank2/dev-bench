@@ -1,8 +1,8 @@
----
+﻿---
 paths:
   - "src/**/*Form*.tsx"
   - "src/components/**/index.tsx"
-  - "src/routes/**/*.tsx"
+  - "src/app/**/*.tsx"
 ---
 
 # Bố cục form — `Field*` của shadcn
@@ -78,7 +78,7 @@ form mới), lấy lỗi từ `fieldState`:
 
 ## Áp dụng trong DevBench
 
-Form mới dùng Field/Controller trong src/routes/dashboard/_components.
+Form mới dùng Field/Controller trong src/app/_projects/_components.
 Không có các wrapper form legacy của repo tham chiếu trong project này.
 FieldLabel luôn nằm trong luồng bố cục phía trên input/select/textarea; không
 floating label, không đặt label vào placeholder hoặc dịch label khi focus/có giá trị.

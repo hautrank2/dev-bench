@@ -2,7 +2,12 @@ import { mkdir, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { GitService, parseStatus } from "../electron/services/git";
+import {
+  GitService,
+  remoteWeb,
+  parseStatus,
+  pathBatches,
+} from "../electron/services/git";
 import { fixture, gitCommand, initRepo, projectAt, until } from "./helpers";
 
 describe("Git against isolated real checkouts", () => {
@@ -13,6 +18,67 @@ describe("Git against isolated real checkouts", () => {
       { path: "tên mới.txt", originalPath: "tên cũ.txt", staged: true },
       { path: 'quote "x".txt', unstaged: true, staged: false },
     ]);
+  });
+
+  it("builds a web page from remotes without keeping credentials", async () => {
+    for (const remote of [
+      "https://github.com/owner/app.git",
+      "https://user:secret@github.com/owner/app",
+      "git@github.com:owner/app.git",
+      "ssh://git@ssh.github.com:443/owner/app.git",
+    ])
+      expect(remoteWeb(remote)).toEqual({
+        provider: "github",
+        url: "https://github.com/owner/app",
+      });
+    for (const remote of [
+      "https://oauth2:secret@gitlab.example.com/team/group/app.git",
+      "git@gitlab.example.com:team/group/app.git",
+      "ssh://git@gitlab.example.com:2222/team/group/app.git",
+    ])
+      expect(remoteWeb(remote)).toEqual({
+        provider: "gitlab",
+        url: "https://gitlab.example.com/team/group/app",
+      });
+    expect(remoteWeb("http://192.168.1.20:3000/team/app.git")).toEqual({
+      provider: "other",
+      url: "http://192.168.1.20:3000/team/app",
+    });
+    for (const remote of [
+      "https://github.com/owner",
+      "https://github.com/../app",
+      "file:///github.com/owner/app",
+      "git@github-work:owner/app.git",
+      "git@ssh.dev.azure.com:v3/org/project/app",
+      "C:/repos/app.git",
+      "../repos/app.git",
+    ])
+      expect(remoteWeb(remote)).toBeUndefined();
+
+    const folder = await fixture("github");
+    await initRepo(folder);
+    const service = new GitService();
+    expect((await service.summary(projectAt(folder))).web).toBeUndefined();
+    await gitCommand(
+      folder,
+      "remote",
+      "add",
+      "fork",
+      "git@github.com:someone/fork.git",
+    );
+    expect((await service.summary(projectAt(folder))).web?.url).toBe(
+      "https://github.com/someone/fork",
+    );
+    await gitCommand(
+      folder,
+      "remote",
+      "add",
+      "origin",
+      "https://github.com/owner/app.git",
+    );
+    expect((await service.summary(projectAt(folder))).web?.url).toBe(
+      "https://github.com/owner/app",
+    );
   });
 
   it("commits selected files, respects external staging, review tokens and hooks", async () => {
@@ -75,6 +141,67 @@ describe("Git against isolated real checkouts", () => {
     ).toBe(true);
   });
 
+  it("stages more files than one command line can hold", async () => {
+    expect(pathBatches(["aaaa", "bbbb", "cccc"], 14)).toEqual([
+      ["aaaa", "bbbb"],
+      ["cccc"],
+    ]);
+
+    const folder = await fixture("git-many");
+    await initRepo(folder);
+    // About 40,000 characters of paths, over the Windows limit.
+    const files = Array.from(
+      { length: 600 },
+      (_, index) => `${"long-name-".repeat(6)}${index}.txt`,
+    );
+    await Promise.all(
+      files.map((name) => writeFile(path.join(folder, name), "x\n")),
+    );
+    const snapshot = await new GitService().stage(projectAt(folder), files);
+    expect(snapshot.files.filter((file) => file.staged)).toHaveLength(600);
+  });
+
+  it("summarizes staged, unstaged and untracked files once per path, excluding ignored files", async () => {
+    const folder = await fixture("git-changes");
+    await initRepo(folder);
+    const service = new GitService();
+    const project = projectAt(folder);
+    expect(await service.summary(project)).toMatchObject({ changedFiles: 0 });
+
+    await writeFile(path.join(folder, "initial.txt"), "staged\n");
+    await gitCommand(folder, "add", "initial.txt");
+    await writeFile(path.join(folder, "initial.txt"), "also unstaged\n");
+    await mkdir(path.join(folder, "new files"));
+    await writeFile(path.join(folder, "new files", "tệp mới.txt"), "new\n");
+    await writeFile(path.join(folder, "new files", "second.txt"), "new\n");
+    await writeFile(
+      path.join(folder, ".git", "info", "exclude"),
+      "ignored.txt\n",
+    );
+    await writeFile(path.join(folder, "ignored.txt"), "ignored\n");
+    expect(await service.summary(project)).toMatchObject({ changedFiles: 3 });
+    // Reading the summary must preserve the existing staging area.
+    expect(
+      (await service.snapshot(project)).files.filter((file) => file.staged),
+    ).toHaveLength(1);
+  });
+
+  it("summarizes changes on unborn and detached branches", async () => {
+    const folder = await fixture("git-unborn");
+    await gitCommand(folder, "init", "-b", "main");
+    await writeFile(path.join(folder, "new.txt"), "new\n");
+    const service = new GitService();
+    const project = projectAt(folder);
+    const unborn = await service.summary(project);
+    expect(unborn).toMatchObject({ branch: "main", changedFiles: 1 });
+
+    await initRepo(folder);
+    await gitCommand(folder, "checkout", "--detach", "HEAD");
+    const detached = await service.summary(project);
+    expect(detached.branch).toContain("Detached HEAD");
+    expect(detached.changedFiles).toBe(1);
+  });
+
   it("pulls fast-forward, pushes HEAD to the exact upstream ref, rejects missing upstream and divergence", async () => {
     const root = await fixture("remote");
     const remote = path.join(root, "remote.git");
@@ -87,7 +214,13 @@ describe("Git against isolated real checkouts", () => {
     const service = new GitService();
     const project = projectAt(local);
     await expect(service.push(project)).rejects.toThrow("No upstream");
+    expect((await service.summary(project)).sync).toBeNull();
     await gitCommand(local, "push", "-u", "origin", "main:shared-target");
+    expect((await service.snapshot(project)).sync).toEqual({
+      upstream: "origin/shared-target",
+      ahead: 0,
+      behind: 0,
+    });
     await gitCommand(root, "clone", "-b", "shared-target", remote, peer);
     await gitCommand(peer, "config", "user.name", "Peer");
     await gitCommand(peer, "config", "user.email", "peer@devbench.local");
@@ -103,7 +236,12 @@ describe("Git against isolated real checkouts", () => {
     await writeFile(path.join(local, "local.txt"), "local\n");
     await gitCommand(local, "add", "local.txt");
     await gitCommand(local, "commit", "-m", "Local update");
+    expect((await service.summary(project)).sync).toMatchObject({
+      ahead: 1,
+      behind: 0,
+    });
     await service.push(project);
+    expect((await service.summary(project)).sync).toMatchObject({ ahead: 0 });
     expect(
       (
         await gitCommand(
@@ -124,6 +262,11 @@ describe("Git against isolated real checkouts", () => {
     await gitCommand(peer, "commit", "-m", "Right");
     await gitCommand(peer, "push");
     await expect(service.pull(project)).rejects.toThrow("diverged");
+    // The refused pull still fetched, so both sides are known now.
+    expect((await service.summary(project)).sync).toMatchObject({
+      ahead: 1,
+      behind: 1,
+    });
   });
 
   it("serializes writes for two subprojects in the same checkout", async () => {

@@ -16,7 +16,7 @@ Kebab-case, dạng `<tiền tố>-<vùng>`:
 
 | Component nằm ở                              | Tiền tố                                                                                      | Ví dụ                                                                 |
 | -------------------------------------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| `src/routes/**` (route file, `_components/`) | **tên trang** = segment cuối có nghĩa của route; bỏ layout `_app`, nhóm `(x)`, tham số `$id` | `liveview-list`, `liveview-content-playback`, `object-counting-chart` |
+| `src/app/**` (page.tsx, `_components/`) | **tên trang** = segment cuối có nghĩa của route; bỏ layout `_app`, nhóm `(x)`, tham số `$id` | `liveview-list`, `liveview-content-playback`, `object-counting-chart` |
 | `src/components/layouts/`                    | `layout-`                                                                                    | `layout-header`, `layout-sidebar`, `layout-setting`                   |
 | `src/components/<nhóm>/` khác                | **tên component**                                                                            | `camera-form-info`, `filter-form-toolbar`, `stream-stats-panel`       |
 

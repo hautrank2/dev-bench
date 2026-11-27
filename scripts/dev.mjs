@@ -3,8 +3,11 @@ import { createServer } from "vite";
 import { spawn } from "node:child_process";
 import electron from "electron";
 import { copyBrandAssets } from "./brand-assets.mjs";
+import { electronEnvDefines } from "./electron-env.mjs";
+import { allowPtyHelper } from "./pty-permissions.mjs";
 
 await copyBrandAssets();
+await allowPtyHelper();
 await build({
   entryPoints: ["electron/main.ts", "electron/preload.ts"],
   bundle: true,
@@ -12,9 +15,10 @@ await build({
   format: "cjs",
   outdir: "dist-electron",
   outExtension: { ".js": ".cjs" },
-  external: ["electron"],
+  external: ["electron", "node-pty"],
   target: "node22",
   sourcemap: true,
+  define: electronEnvDefines("development"),
 });
 const server = await createServer();
 await server.listen();

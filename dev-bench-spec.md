@@ -17,13 +17,15 @@ Trạng thái tiến trình gồm `Stopped`, `Starting`, `Running`, `Stopping` v
 | **Add Project** | Mở form có tên project, thư mục local, lệnh chạy, URL và tùy chọn đưa vào **Run All**. Dùng folder picker của Windows và cho sửa các trường này qua **Edit Project**. |
 | **Copy Path** | Sao chép đường dẫn đầy đủ của thư mục project vào clipboard và hiện thông báo đã sao chép. |
 | **Open Terminal** | Mở một cửa sổ hoặc tab terminal tại thư mục project. Ưu tiên Windows Terminal khi có sẵn, dùng PowerShell làm phương án dự phòng. |
-| **Run** | Chạy đúng lệnh đã cấu hình với working directory là thư mục project. Ví dụ `pnpm run dev`. Khi chưa có lệnh, mở form cấu hình tại trường **Run command**. |
+| **Run** | Chạy đúng lệnh đã cấu hình với working directory tùy chọn; để trống dùng thư mục project. Ví dụ `pnpm run dev`. Khi chưa có lệnh, mở form cấu hình tại trường **Run command**. |
 | **Stop** | Dừng cây tiến trình do dashboard khởi chạy cho project và cập nhật trạng thái khi việc dừng hoàn tất. Hiển thị lỗi nếu còn tiến trình chưa dừng được. |
+| **Tab Terminal** | Trên trang repository, mở shell tương tác tại thư mục project ngay trong app. |
+| **Open GitHub / GitLab / repository** | Mở trang web của remote Git bằng browser mặc định; chỉ hiện khi remote có địa chỉ web. |
 | **Open Web** | Mở URL đã cấu hình bằng browser mặc định. Khi chưa có URL, mở form cấu hình tại trường **Web URL**. Người dùng cũng có thể mở URL của project đã chạy từ terminal bên ngoài. |
 | **Pull Code** | Chạy `git pull --ff-only` trên branch hiện tại. Báo rõ khi thiếu upstream, branch bị diverge, Git từ chối vì thay đổi local, hoặc có lỗi kết nối hay xác thực. |
 | **Git Commit** | Mở modal hiển thị branch, danh sách file đã stage và ô **Commit message**. Sau khi xác nhận, chạy `git commit -m <message>` nếu có file đã stage và message có nội dung. Cho stage các file được chọn ngay trong modal. Hiển thị toàn bộ danh sách staged cuối cùng trước khi commit, kể cả file được stage từ terminal. |
 | **Push** | Xác định remote và branch upstream của branch hiện tại rồi push HEAD tới đúng đích đó, không dùng force. Khi thiếu upstream, hiển thị lỗi và hướng dẫn thiết lập trong terminal. Giữ thao tác **Push** độc lập với **Git Commit**. |
-| **Run All** | Chạy các project được chọn qua **Include in Run All**. Bỏ qua project đã chạy, báo riêng project thiếu lệnh hoặc khởi chạy lỗi và tiếp tục các project còn lại. Khi batch kết thúc, hiển thị kết quả theo project. |
+| **Run All** | Chạy các project được chọn qua **Include in Run All**. Bỏ qua project đã chạy, báo riêng project thiếu lệnh hoặc khởi chạy lỗi và tiếp tục các project còn lại. Khi batch kết thúc, báo bằng toast và lưu kết quả từng repository trong danh sách thông báo trên header. |
 
 ## Cấu hình project
 
@@ -31,6 +33,7 @@ Trạng thái tiến trình gồm `Stopped`, `Starting`, `Running`, `Stopping` v
 | --- | --- |
 | **Name** | Bắt buộc. Đề xuất tên thư mục khi người dùng chọn folder. |
 | **Project folder** | Bắt buộc. Thư mục local đang tồn tại. Hỗ trợ đường dẫn Windows có dấu tiếng Việt và khoảng trắng. |
+| **Working directory (optional)** | Đường dẫn tương đối từ thư mục repo hoặc tuyệt đối, tối đa 4096 ký tự. Để trống dùng thư mục repo. Thư mục phải tồn tại; áp dụng cho Run/Run All, không đổi thư mục thao tác Git. |
 | **Run command** | Có thể lưu trống, cần thiết lập trước khi chạy. Gợi ý `pnpm run dev` và cho phép chỉnh theo từng project. |
 | **Web URL** | Có thể lưu trống, cần thiết lập trước khi mở web. Chấp nhận URL hợp lệ dùng `http://` hoặc `https://`, kể cả localhost. |
 | **Include in Run All** | Tùy chọn theo project và được lưu sau khi đóng app. |

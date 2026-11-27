@@ -4,20 +4,26 @@ import { cn } from "~/lib/utils";
 import { Slot } from "radix-ui";
 import { Spin } from "~/components/ui/spin";
 
+const primaryButtonStyle =
+  "bg-primary text-primary-foreground shadow-button hover:bg-primary/90 hover:shadow-button-hover active:shadow-button";
+const textButtonStyle =
+  "bg-transparent text-primary-ink hover:bg-primary/4 active:bg-primary/10";
+
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-xs font-semibold tracking-wide whitespace-nowrap transition-colors outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium tracking-normal normal-case whitespace-nowrap transition-[background-color,border-color,color,box-shadow] duration-150 outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25 disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        default: primaryButtonStyle,
+        primary: primaryButtonStyle,
         destructive:
-          "bg-destructive text-primary-foreground hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40",
+          "bg-destructive text-destructive-foreground shadow-button hover:bg-destructive/90 hover:shadow-button-hover active:shadow-button focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40",
         outline:
-          "border border-input bg-card text-foreground hover:border-primary hover:bg-accent hover:text-accent-foreground",
+          "border border-primary-ink/50 bg-transparent text-primary-ink hover:border-primary-ink hover:bg-primary/4 active:bg-primary/10",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost:
-          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
+          "bg-secondary text-secondary-foreground shadow-button hover:bg-secondary/80 hover:shadow-button-hover active:shadow-button",
+        text: textButtonStyle,
+        ghost: textButtonStyle,
         /**
          * Như `ghost` nhưng icon màu nhạt — dành cho `<IconButton>` của MUI khi
          * KHÔNG truyền `color`.
@@ -28,8 +34,8 @@ const buttonVariants = cva(
          * một bậc, nên giữ token cũ ở đây thay vì rắc class ở từng callsite.
          */
         "ghost-muted":
-          "text-muted-foreground hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
-        link: "text-primary underline-offset-4 hover:underline",
+          "bg-transparent text-muted-foreground hover:bg-foreground/4 hover:text-foreground active:bg-foreground/10",
+        link: "text-primary-ink underline-offset-4 hover:underline",
 
         /*
           BỐN BIẾN THỂ "GHOST CÓ TÔNG" — dành cho nút icon mang ý nghĩa.
@@ -48,7 +54,7 @@ const buttonVariants = cva(
           nút đặc màu đỏ cho hành động chính, cái này là nút icon trong bảng.
         */
         "ghost-primary":
-          "text-primary hover:bg-primary/10 hover:text-primary active:bg-primary/20 focus-visible:ring-primary/20",
+          "text-primary-ink hover:bg-primary/10 hover:text-primary-ink active:bg-primary/20 focus-visible:ring-primary/20",
         "ghost-success":
           "text-success hover:bg-success/10 hover:text-success active:bg-success/20 focus-visible:ring-success/20",
         "ghost-warning":
@@ -57,12 +63,12 @@ const buttonVariants = cva(
           "text-destructive hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20 focus-visible:ring-destructive/20",
       },
       size: {
-        default: "h-9 px-4 py-2 has-[>svg]:px-3",
-        xs: "h-6 gap-1 rounded-md px-2 text-xs has-[>svg]:px-1.5 [&_svg:not([class*='size-'])]:size-3",
-        sm: "h-8 gap-1.5 rounded-md px-3 has-[>svg]:px-2.5",
-        lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
+        default: "h-9 min-w-16 px-4 py-2 has-[>svg]:px-3",
+        xs: "h-6 min-w-10 gap-1 px-2 text-xs has-[>svg]:px-1.5 [&_svg:not([class*='size-'])]:size-3",
+        sm: "h-8 min-w-14 gap-1.5 px-3 text-[13px] has-[>svg]:px-2.5",
+        lg: "h-10 min-w-16 px-6 has-[>svg]:px-4",
         icon: "size-9",
-        "icon-xs": "size-6 rounded-md [&_svg:not([class*='size-'])]:size-3",
+        "icon-xs": "size-6 [&_svg:not([class*='size-'])]:size-3",
         "icon-sm": "size-8",
         "icon-lg": "size-10",
       },

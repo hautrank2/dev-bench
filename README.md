@@ -28,6 +28,16 @@ Dev mở Electron với Vite ở `127.0.0.1:5173`. Renderer có HMR; thay đổi
 `electron/` hoặc `shared/` thì khởi động lại dev. Không dùng browser thông
 thường thay Electron, vì OS actions và tài khoản đi qua preload/main.
 
+Đặt URL backend mặc định trong `.env` ở gốc repo:
+
+```dotenv
+DEV_BENCH_API_ORIGIN=https://your-api.example.com
+```
+
+File mẫu: `.env.example`. Khởi động lại dev/build sau khi sửa; URL đã Save server
+trong Settings vẫn được ưu tiên. Chỉ đặt URL công khai, không đặt secret backend.
+Xem [hướng dẫn .env](docs/cloud-setup.md#đặt-url-backend-qua-env).
+
 ## Sử dụng
 
 App mặc định **English**. Đổi tại **Settings → Language → Tiếng Việt**;
@@ -37,15 +47,24 @@ giao diện đổi ngay và ghi nhớ lựa chọn khi mở lại. Các từ `pr
 1. **Add Project**: đặt tên/mô tả, ví dụ OpsDesk.
 2. Mở project, **Add Repository** cho server, client, mobile, broker…
 3. Browse folder, đặt command (`pnpm run dev`), Web URL và startup selection.
+   Nếu lệnh chạy ở thư mục khác root repo, nhập **Working directory (optional)**:
+   `apps/web` (tương đối từ repo) hoặc đường dẫn tuyệt đối. Để trống dùng thư mục
+   repo. Run/Run All dùng thư mục này; Git/Copy Path/Open Terminal vẫn dùng repo.
+   Thư mục chạy phải tồn tại, được lưu khi export/import JSON và cloud backup;
+   dừng repository trước khi thay đổi thư mục chạy.
 4. Run từng repo hoặc **Run project** để chạy tất cả repo con.
 5. **Run All** ở Dashboard/Projects chỉ chạy repo đã chọn Include in Run All;
    bỏ qua repo đang hoạt động, báo riêng lỗi từng repo.
 
 Project list hỗ trợ **Card / Table**, ghi nhớ mode. Sidebar mở rộng Projects
-và từng project để xem repo con. Processes quản lý process của app; Ports
+và từng project để xem repo con. Run/Stop thực hiện ngay trong Projects; Ports
 đối chiếu Web URL local với TCP listener thật và PID; Stats là snapshot
 hiện tại; Utilities kiểm tra Node/pnpm/Git; Hosts chỉ đọc; Config Files mở
 config phổ biến bằng editor mặc định, không liệt kê `.env` thật.
+
+Trang Processes đã bỏ; URL cũ chuyển về Projects. Bảng Projects, Ports và
+Stats có header cố định khi cuộn, cao tối đa min(65vh, 640px). Bảng repo bên
+trong có vùng cuộn riêng tối đa min(40vh, 320px).
 
 **Run / Stop** chỉ quản lý cây process dashboard đã khởi chạy. Windows dùng
 taskkill `/T /F`; macOS dùng process group SIGTERM rồi SIGKILL khi cần.
@@ -66,15 +85,54 @@ bạn quyết định port thực tế. Cùng một OpsDesk có thể dùng:
 Logs có stdout/stderr/lifecycle, 1.500 chunks gần nhất, mỗi chunk tối đa
 32.000 ký tự. Có Follow output và theme độc lập cho in-app output.
 
+## Terminal trong app
+
+Trang repository có tab **Log** và **Terminal**. Terminal là shell tương tác
+thật tại thư mục repo (PowerShell trên Windows, `$SHELL` trên macOS), dùng
+xterm.js và node-pty. Shell được giữ khi đổi tab hoặc trang, lưu 200.000 ký tự
+output gần nhất; **Khởi động lại terminal** đóng shell cũ cùng lệnh đang chạy.
+Copy bằng `Ctrl+C` khi đang bôi đen, paste bằng `Ctrl+V`. Menu **Open Terminal**
+vẫn mở terminal bên ngoài.
+
+## Sắp xếp trên sidebar
+
+Kéo thả project hoặc repository để đổi thứ tự; thả repo lên tên project khác để
+chuyển sang đó. Chuột phải có **Chuyển lên**, **Chuyển xuống** và **Chuyển sang
+project** cho thao tác bằng bàn phím. Dừng repo trước khi chuyển project.
+
+Menu chuột phải của repository có Run/Stop, Open Web, mở trang remote, Open
+Terminal, Copy Path và nhóm **Git** (Pull Code, Git Commit, Push). Menu của
+project có Run/Stop project và Add Repository. Nút và mục Stop dùng màu đỏ.
+
+## Thông báo
+
+Kết quả thao tác và lỗi hiện bằng toast ở góc dưới. Lỗi và kết quả có nội dung
+(Pull, Push, Commit, chạy cả project) được lưu lại ở nút chuông trên header: bấm
+từng mục để xem chi tiết, xoá từng mục hoặc **Xóa tất cả**. Danh sách chỉ nằm
+trong bộ nhớ (tối đa 200 mục) và mất khi đóng app.
+
+## Tự điền Run command và Web URL
+
+Nút **Browse** mở tại thư mục bạn chọn lần trước (nhớ riêng trên máy, giữ sau
+khi mở lại app; thư mục đã xoá thì mở ở mặc định của hệ điều hành).
+
+Chọn hoặc gõ đường dẫn thư mục, form đọc `package.json`, project .NET hoặc file
+Compose để điền **Run command** và **Web URL**. Chỉ điền vào ô trống, ô còn giá
+trị mặc định hoặc ô đã được tự điền trước đó; hãy kiểm tra lại port trước khi lưu.
+
 ## Git
 
 Menu repo có Copy Path, Open Terminal, Pull Code, Git Commit và Push.
+Repo có remote Git hiện thêm nút **Mở GitHub**, **Mở GitLab** hoặc **Mở trang
+repository** (ưu tiên `origin`; hỗ trợ HTTPS và SSH, không hỗ trợ SSH alias).
 App hiển thị root/branch thực tế, hỗ trợ subproject monorepo; checkout dùng
 chung được khóa để không chạy hai Git mutation đồng thời.
 
 - Pull Code: `git pull --ff-only`, không tự stash/merge/rebase.
-- Git Commit: chọn file → Stage selected → nhập message → Review staged
-  files → xem toàn bộ Final staged list → Confirm Commit.
+- Git Commit: chọn file (hoặc **Select all**) → Stage selected → nhập message →
+  Review staged files → xem toàn bộ Final staged list → Confirm Commit.
+  Unstaged và Staged nằm thành hai cột, mỗi cột có chiều cao tối đa và cuộn
+  riêng; chọn rất nhiều file được `git add` theo nhiều đợt.
 - File đã stage từ terminal cũng được hiển thị; file chưa stage không bị
   commit. Staged list đổi bên ngoài thì phải review lại.
 - Stage/commit/hook lỗi giữ message và tải staged list thực tế.
@@ -89,22 +147,48 @@ Logo DevBench dùng biểu tượng terminal riêng, đồng bộ sidebar, favic
 Windows. SVG gốc tại `src/assets/dev-bench.svg`, PNG/ICO tại `build/`; chạy
 `pnpm icons` để tạo lại sau khi sửa SVG. Xem [brand assets](build/README.md).
 
-Phong cách lấy cảm hứng từ [Clarity](https://clarity.design/): header navy,
-sidebar trung tính, card phẳng, viền rõ và góc bo nhỏ. Giữ primary NestJS
-`#f23551` ở Light/Dark, icon Lucide và pattern shadcn/Radix/Tailwind.
+Phong cách lấy cảm hứng từ VS Code theo ảnh tham chiếu: Dark dùng nền nội dung
+`#282c34`, sidebar/header `#21252b`, viền dịu `#343943`; Light dùng canvas
+`#f7f8fb`, card trắng và chrome xám trung tính. Card có chiều sâu nhẹ;
+bo góc cơ bản 8px
+(cỡ lớn 12px, rất lớn 16px). Giữ primary teal đậm
+`#0f766e` ở Light/Dark, icon Lucide và pattern shadcn/Radix/Tailwind.
 Label luôn nằm phía trên input/select/textarea, không floating label.
 Font giao diện Segoe UI với **Be Vietnam Pro** dự phòng; log dùng
 **JetBrains Mono**. Font dự phòng Latin/Vietnamese đóng gói để dùng offline.
-License font trong `docs/licenses/`.
+License font và thư viện terminal trong `docs/licenses/`.
+
+Settings → Appearance → Interface font: chọn Mặc định hệ thống, Be Vietnam Pro
+hoặc JetBrains Mono. Áp dụng ngay, nhớ sau khi mở lại app và đi kèm export/import
+JSON; log vẫn dùng monospace. Các font đóng gói hoạt động offline. Backup cũ
+hoặc cloud chưa có trường font sẽ giữ lựa chọn hiện tại trên máy khi restore.
 
 - Sidebar có một nút ghi theme hiện tại, mở dropdown Light / Dark / System;
   không còn hai mục Themes và mode riêng. Settings vẫn có appearance tiles.
+- Item sidebar active dùng nền primary, chữ/icon màu background của theme và
+  icon solid; áp dụng cả sidebar đầy đủ, thu gọn và drawer mobile.
+- Sidebar có shadow nhẹ. Bấm repository trong cây project để mở trang riêng
+  với tab Log / Terminal, Run/Stop, Open Web và menu thao tác đúng repository đó.
+  Tải lại URL repo tự mở nhánh project; log chỉ tự cuộn bên trong vùng output.
+- Chữ và icon trên nút primary dùng màu trắng ở cả Light/Dark.
+- Button theo ảnh MUI: contained có shadow, outlined viền primary, text có
+  nền hover nhẹ; giữ primary hiện tại, không tự viết hoa nhãn, giữ bo góc 8px.
+  Phân cấp primary cho hành động chính, outline cho hành động phụ và text
+  cho Hủy/Sửa/điều hướng nhẹ; giữ secondary và các variant trạng thái.
+- Input, textarea và select dùng nền dịu, viền xám mảnh và shadow nhẹ theo
+  ảnh textfield; giữ bo góc 8px, có focus primary và trạng thái lỗi riêng.
+- Card thống kê dùng tông hồng, tím nhạt, mint và kem; số liệu lớn và thanh
+  tỷ lệ lấy từ dữ liệu thật. Card project không có trường ảnh tùy chỉnh.
+- Form Thêm/Sửa project gồm tên và mô tả, không có trường ảnh nền card.
 - Sidebar thu gọn thành dải icon bằng nút Collapse/Expand sidebar, nhớ trạng
   thái sau mở lại app. Rê chuột lên icon để xem tên; mobile dùng drawer đầy đủ.
 - Logo nằm trong sidebar cao toàn cửa sổ. Header và body thuộc cột nội dung;
   nút Collapse/Expand sidebar nằm ở đầu header.
 - App: System / Light / Dark; preference blueDark cũ chuyển thành Dark.
-- In-app terminal/log: Follow app / Midnight / Paper / Rose.
+- In-app terminal/log có 4 theme: Tối / Trắng / Dracula / Rose.
+  Tối (Midnight) đứng đầu và là mặc định khi chưa có lựa chọn hợp lệ;
+  lựa chọn đã lưu vẫn được giữ. Lựa chọn cũ “Theo ứng dụng” chuyển về Tối.
+  Backup cloud gửi Dracula dưới tên `app` vì API chưa có giá trị mới.
 - External terminal giữ theme riêng của ứng dụng terminal đó.
 - Settings quản lý project sets, export/import, account và cloud backup.
 
@@ -169,7 +253,7 @@ Hướng dẫn theo [electron-builder](https://www.electron.build/v26/docs/featu
 
 Kết quả tách backend .NET: [verification-repo-split.md](docs/verification-repo-split.md).
 
-Kết quả theme Clarity hiện tại: [verification-clarity.md](docs/verification-clarity.md).
+Kết quả theme VS Code hiện tại: [verification.md](docs/verification.md).
 Kết quả giao diện bản 1.1.3 trước đó: [verification-1.1.3.md](docs/verification-1.1.3.md).
 
 ## Xử lý lỗi nhanh

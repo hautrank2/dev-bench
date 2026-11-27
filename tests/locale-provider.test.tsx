@@ -1,4 +1,4 @@
-// @vitest-environment jsdom
+﻿// @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import {
   act,
@@ -13,7 +13,7 @@ import type { Language } from "../shared/i18n";
 import { languageStorageKey } from "../shared/i18n";
 import { LocaleProvider } from "../src/providers/locale";
 import { useLocale } from "../src/providers/locale/context";
-import { ProjectFormDialog } from "../src/routes/dashboard/_components/project-form";
+import { ProjectFormDialog } from "../src/app/_projects/_components/project-form";
 
 const sync = vi.hoisted(() => vi.fn(async () => undefined));
 vi.mock("../src/api/api-list/projects", () => ({

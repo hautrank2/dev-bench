@@ -1,24 +1,19 @@
 import { Link } from "@tanstack/react-router";
 import {
-  Activity,
-  BarChart3,
   ChevronDown,
   ChevronRight,
-  Files,
-  FolderGit2,
-  Globe,
-  LayoutDashboard,
   Menu,
   Monitor,
   Moon,
-  Network,
   PanelLeftClose,
   PanelLeftOpen,
   Settings2,
-  Sparkles,
   Sun,
 } from "lucide-react";
 
+import { CommitDialog } from "~/app/_projects/_components/commit-dialog";
+import { GroupFormDialog } from "~/app/_projects/_components/group-form";
+import { ProjectFormDialog } from "~/app/_projects/_components/project-form";
 import appLogo from "~/assets/dev-bench.svg";
 import { Button } from "~/components/ui/button";
 import {
@@ -38,6 +33,9 @@ import { cn } from "~/lib/utils";
 import { useLocale } from "~/providers/locale/context";
 
 import { useAppLayout } from "./hook";
+import { MessageCenter } from "./message-center";
+import { ProjectTree } from "./project-tree";
+import { SidebarIcon } from "./sidebar-icon";
 import type { AppLayoutProps } from "./type";
 
 export const AppLayout = (props: AppLayoutProps) => {
@@ -46,7 +44,7 @@ export const AppLayout = (props: AppLayoutProps) => {
   const state = useAppLayout(props);
   const brand = (collapsed = false) => (
     <Link
-      to="/"
+      to="/projects"
       aria-label="DevBench home"
       title="DevBench"
       className={cn(
@@ -76,29 +74,12 @@ export const AppLayout = (props: AppLayoutProps) => {
       className="layout-navigation flex min-h-0 flex-1 flex-col gap-1"
       aria-label={t("Main navigation")}
     >
-      <Link
-        to="/"
-        aria-label={t("Dashboard")}
-        title={collapsed ? t("Dashboard") : undefined}
-        className={cn(
-          "flex items-center gap-3 rounded-md px-3 py-2",
-          collapsed && "justify-center px-0",
-          state.pathname === "/"
-            ? "bg-sidebar-accent text-sidebar-accent-foreground"
-            : "text-sidebar-foreground hover:bg-muted",
-        )}
-      >
-        <LayoutDashboard className="size-4" />
-        <span className={collapsed ? "sr-only" : undefined}>
-          {t("Dashboard")}
-        </span>
-      </Link>
       <div
         className={cn(
           "flex items-center rounded-md",
           state.pathname.startsWith("/projects")
             ? "bg-sidebar-accent text-sidebar-accent-foreground"
-            : "text-sidebar-foreground hover:bg-muted",
+            : "text-sidebar-foreground hover:bg-primary/10",
         )}
       >
         <Link
@@ -110,7 +91,10 @@ export const AppLayout = (props: AppLayoutProps) => {
             collapsed && "justify-center px-0",
           )}
         >
-          <FolderGit2 className="size-4" />
+          <SidebarIcon
+            name="projects"
+            active={state.pathname.startsWith("/projects")}
+          />
           <span className={collapsed ? "sr-only" : undefined}>
             {t("Projects")}
           </span>
@@ -127,79 +111,37 @@ export const AppLayout = (props: AppLayoutProps) => {
             aria-label={t("Expand projects")}
             aria-expanded={state.projectsOpen}
             onClick={() => state.setProjectsOpen(!state.projectsOpen)}
+            className={
+              state.pathname.startsWith("/projects")
+                ? "text-inherit hover:bg-sidebar-foreground/10 hover:text-inherit dark:hover:bg-sidebar-foreground/10"
+                : undefined
+            }
           >
             {state.projectsOpen ? <ChevronDown /> : <ChevronRight />}
           </Button>
         )}
       </div>
       {!collapsed && state.projectsOpen && (
-        <div className="layout-project-tree ml-4 space-y-1 border-l pl-2">
-          {state.workspace.data?.groups.map((group) => (
-            <div key={group.id} data-project-id={group.id}>
-              <div className="flex min-w-0 items-center gap-1">
-                <Button
-                  size="icon-xs"
-                  variant="ghost"
-                  aria-label={t("Expand {0}", { 0: group.name })}
-                  aria-expanded={state.expanded.includes(group.id)}
-                  onClick={() => state.toggleProject(group.id)}
-                >
-                  {state.expanded.includes(group.id) ? (
-                    <ChevronDown />
-                  ) : (
-                    <ChevronRight />
-                  )}
-                </Button>
-                <Link
-                  to={`/projects/${group.id}`}
-                  className={cn(
-                    "min-w-0 flex-1 truncate rounded-md px-2 py-1.5 text-xs",
-                    state.pathname.endsWith(group.id)
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  {group.name}
-                </Link>
-              </div>
-              {state.expanded.includes(group.id) && (
-                <div className="ml-6 space-y-1 border-l pl-3">
-                  {state.repositories.data
-                    ?.filter((repo) => repo.groupId === group.id)
-                    .map((repo) => (
-                      <Link
-                        key={repo.id}
-                        to={`/projects/${group.id}`}
-                        className="flex min-w-0 items-center gap-2 py-1.5 text-xs text-muted-foreground hover:text-foreground"
-                      >
-                        <span
-                          className={cn(
-                            "size-1.5 shrink-0 rounded-full",
-                            repo.runtime.status === "Running"
-                              ? "bg-success"
-                              : "bg-muted-foreground/40",
-                          )}
-                        />
-                        <span className="truncate">{repo.name}</span>
-                      </Link>
-                    ))}
-                </div>
-              )}
-            </div>
-          ))}
-          {state.workspace.data?.groups.length === 0 && (
-            <p className="px-3 py-2 text-xs text-muted-foreground">
-              {t("No projects yet")}
-            </p>
-          )}
-        </div>
+        <ProjectTree
+          groups={state.workspace.data?.groups ?? []}
+          repositories={state.repositories.data ?? []}
+          pathname={state.pathname}
+          expanded={state.expanded}
+          onToggle={state.toggleProject}
+          onExpand={state.expandProject}
+          onEditProject={state.editGroup}
+          onEditRepository={state.editRepository}
+          onAddRepository={state.addRepository}
+          onCommit={state.commitRepository}
+        />
       )}
-      {[
-        { path: "/processes", label: t("Processes"), icon: Activity },
-        { path: "/ports", label: t("Ports"), icon: Network },
-        { path: "/stats", label: t("Stats"), icon: BarChart3 },
-        { path: "/utilities", label: t("Utilities"), icon: Sparkles },
-      ].map(({ path, label, icon: Icon }) => (
+      {(
+        [
+          { path: "/ports", label: t("Ports"), icon: "ports" },
+          { path: "/stats", label: t("Stats"), icon: "stats" },
+          { path: "/utilities", label: t("Utilities"), icon: "utilities" },
+        ] as const
+      ).map(({ path, label, icon }) => (
         <Link
           key={path}
           to={path}
@@ -210,10 +152,10 @@ export const AppLayout = (props: AppLayoutProps) => {
             collapsed && "justify-center px-0",
             state.pathname === path
               ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "text-sidebar-foreground hover:bg-muted",
+              : "text-sidebar-foreground hover:bg-primary/10",
           )}
         >
-          <Icon className="size-4" />
+          <SidebarIcon name={icon} active={state.pathname === path} />
           <span className={collapsed ? "sr-only" : undefined}>{label}</span>
         </Link>
       ))}
@@ -222,10 +164,16 @@ export const AppLayout = (props: AppLayoutProps) => {
       ) : (
         <h6 className="mb-1 mt-7 px-3 text-muted-foreground">{t("System")}</h6>
       )}
-      {[
-        { path: "/hosts", label: "Hosts", icon: Globe },
-        { path: "/config-files", label: t("Config Files"), icon: Files },
-      ].map(({ path, label, icon: Icon }) => (
+      {(
+        [
+          { path: "/hosts", label: "Hosts", icon: "hosts" },
+          {
+            path: "/config-files",
+            label: t("Config Files"),
+            icon: "config-files",
+          },
+        ] as const
+      ).map(({ path, label, icon }) => (
         <Link
           key={path}
           to={path}
@@ -236,10 +184,10 @@ export const AppLayout = (props: AppLayoutProps) => {
             collapsed && "justify-center px-0",
             state.pathname === path
               ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "text-sidebar-foreground hover:bg-muted",
+              : "text-sidebar-foreground hover:bg-primary/10",
           )}
         >
-          <Icon className="size-4" />
+          <SidebarIcon name={icon} active={state.pathname === path} />
           <span className={collapsed ? "sr-only" : undefined}>{label}</span>
         </Link>
       ))}
@@ -258,10 +206,13 @@ export const AppLayout = (props: AppLayoutProps) => {
             collapsed && "justify-center px-0",
             state.pathname === "/settings"
               ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "text-sidebar-foreground hover:bg-muted",
+              : "text-sidebar-foreground hover:bg-primary/10",
           )}
         >
-          <Settings2 className="size-4" />
+          <SidebarIcon
+            name="settings"
+            active={state.pathname === "/settings"}
+          />
           <span className={collapsed ? "sr-only" : undefined}>
             {t("Settings")}
           </span>
@@ -274,6 +225,7 @@ export const AppLayout = (props: AppLayoutProps) => {
               title={t("Theme: {0}", { 0: t(state.theme.theme) })}
               className={cn(
                 "layout-theme-trigger h-10 w-full justify-start gap-3 rounded-md px-3 text-sidebar-foreground",
+                "hover:bg-primary/10 dark:hover:bg-primary/10",
                 collapsed && "justify-center px-0",
               )}
             >
@@ -326,7 +278,7 @@ export const AppLayout = (props: AppLayoutProps) => {
         id="desktop-sidebar"
         data-collapsed={state.collapsed}
         className={cn(
-          "layout-sidebar relative hidden shrink-0 flex-col border-r bg-sidebar lg:flex",
+          "layout-sidebar relative z-10 hidden shrink-0 flex-col border-r bg-sidebar shadow-sidebar lg:flex",
           state.collapsed ? "w-[76px]" : "w-60",
         )}
       >
@@ -378,6 +330,7 @@ export const AppLayout = (props: AppLayoutProps) => {
             <span className="hidden text-xs text-header-muted sm:block">
               {state.cloud.data?.account?.email ?? t("Local mode")}
             </span>
+            <MessageCenter />
             <Button
               variant="ghost"
               size="icon-sm"
@@ -397,13 +350,65 @@ export const AppLayout = (props: AppLayoutProps) => {
         </div>
       </div>
       <Sheet open={state.mobileOpen} onOpenChange={state.setMobileOpen}>
-        <SheetContent side="left" className="w-72 gap-3 overflow-y-auto p-4">
+        <SheetContent
+          side="left"
+          className="w-72 gap-3 overflow-y-auto p-4 shadow-sidebar"
+        >
           <SheetHeader className="p-0">
             <SheetTitle asChild>{brand()}</SheetTitle>
           </SheetHeader>
           {navigation()}
         </SheetContent>
       </Sheet>
+      {state.editingGroup && (
+        <GroupFormDialog
+          key={state.editingGroup.id}
+          open
+          isEdit
+          defaultValues={state.editingGroup}
+          onSubmit={state.saveGroup}
+          onOpenChange={(open) => {
+            if (!open) state.closeGroupEditor();
+          }}
+        />
+      )}
+      {state.repositoryEditor &&
+        (!state.repositoryEditor.id || state.editingRepository) && (
+          <ProjectFormDialog
+            key={
+              state.repositoryEditor.id ??
+              `new-${state.repositoryEditor.groupId}`
+            }
+            open
+            isEdit={!!state.editingRepository}
+            groups={state.workspace.data?.groups}
+            defaultValues={
+              state.editingRepository ?? {
+                groupId: state.repositoryEditor.groupId,
+                name: "",
+                folder: "",
+                command: "",
+                url: "",
+                includeInRunAll: true,
+              }
+            }
+            focusField={state.repositoryEditor.focusField}
+            executionLocked={state.editingRepositoryActive}
+            onSubmit={state.saveRepository}
+            onOpenChange={(open) => {
+              if (!open) state.closeRepositoryEditor();
+            }}
+          />
+        )}
+      {state.committingRepository && (
+        <CommitDialog
+          project={state.committingRepository}
+          open
+          onOpenChange={(open) => {
+            if (!open) state.closeCommit();
+          }}
+        />
+      )}
     </div>
   );
 };

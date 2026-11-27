@@ -12,6 +12,11 @@ Google account
         └── Project khác
 ```
 
+Repository có thêm `workingDirectory` tùy chọn (tối đa 4096 ký tự) cho Run/Run All:
+để trống dùng folder repo, tương đối tính từ repo, tuyệt đối dùng trực tiếp.
+Git/Copy Path/Open Terminal giữ folder repo. Đường dẫn được lưu trong cấu hình,
+JSON/cloud backup; dữ liệu cũ thiếu field vẫn dùng thư mục repo.
+
 Project là nhóm có tên và mô tả. Repo/service mới có folder, command, URL,
 Include in Run All, Git và process riêng. Service không dùng Git vẫn được
 thêm bình thường, ví dụ broker có command `docker compose up`.
@@ -27,7 +32,6 @@ Tên repo nên mô tả vai trò: server, client, mobile, broker.
 | Projects             | Card/Table, tìm kiếm, thêm/sửa tên và mô tả project                                                       |
 | Project detail       | Repo/service con, thêm/sửa repo, Run project, Stop project                                                |
 | Sidebar project tree | Expand/collapse Projects và từng project để thấy repo con                                                 |
-| Processes            | Process Starting/Running/Stopping/Failed do app quản lý; thao tác từng repo                               |
 | Ports                | Cổng từ Web URL localhost + TCP listener thật; gán theo cây PID, lọc project/repo, tùy chọn xem unmanaged |
 | Stats                | Số liệu tức thời theo project: repo, Running, Failed, Git checkout, startup selection                     |
 | Utilities            | Kiểm tra Node.js/pnpm/Git trên PATH, phiên bản hoặc thông tin lỗi                                         |
@@ -38,6 +42,10 @@ Tên repo nên mô tả vai trò: server, client, mobile, broker.
 Không tạo mục MCP/Aliases rỗng. Chưa có MCP server hoặc quản lý shell aliases
 trong bản này. Stats không tạo lịch sử hoạt động giả.
 
+Trang Processes trùng Projects đã bỏ; URL cũ chuyển về /projects. Các bảng
+có header sticky nền đặc và max-height min(65vh, 640px), cuộn bên trong;
+bảng repo lồng dùng min(40vh, 320px) với header riêng.
+
 Sidebar thu gọn thành dải icon và nhớ lựa chọn trên thiết bị. Khi thu gọn,
 Projects mở danh sách project; mở rộng sidebar để dùng cây repo. Mobile luôn
 dùng drawer đầy đủ. Một nút Light/Dark/System hiển thị theme đang chọn và mở
@@ -47,11 +55,62 @@ Layout có hai cột: sidebar toàn chiều cao chứa logo; cột nội dung g�
 và body. Nút thu gọn/mở rộng nằm trong header. Brand vẫn hiện dưới dạng icon
 khi sidebar thu gọn; body và danh sách navigation cuộn độc lập khi cần.
 
-Theme hiện tại lấy cảm hứng Clarity: header navy, sidebar trung tính, card
-phẳng, viền rõ và góc bo nhỏ. Primary NestJS #f23551 ở cả light/dark; dark
-dùng navy/slate. Icon Lucide, shadcn/Radix/Tailwind vẫn được giữ. Label cố định
+Theme hiện tại lấy cảm hứng VS Code theo ảnh tham chiếu: Dark dùng nền nội dung
+#282c34, sidebar/header #21252b và viền dịu #343943; Light dùng canvas #f7f8fb,
+card trắng và chrome xám trung tính. Card có shadow nhẹ, góc bo cơ bản 8px (lớn 12px,
+rất lớn 16px); primary teal đậm #0f766e ở cả light/dark.
+Icon Lucide, shadcn/Radix/Tailwind vẫn được giữ. Label cố định
 trên control, không floating label. Segoe UI với Be Vietnam Pro dự phòng tiếng
-Việt, JetBrains Mono cho log. Card thống kê đầu tiên nhấn bằng viền primary.
+Việt, JetBrains Mono cho log. Card thống kê dùng bốn tông hồng/tím/mint/kem,
+icon tối, số liệu lớn và tỷ lệ thực; vẫn giữ primary #0f766e.
+Form Thêm/Sửa project chỉ có tên và mô tả; bỏ trường ảnh nền card.
+Cấu hình và backup cũ vẫn đọc được, trường ảnh cũ được bỏ qua.
+Sidebar active dùng nền primary, chữ/icon màu trắng và icon
+solid. Sidebar có shadow nhẹ; chữ/icon nút primary màu trắng trong cả hai mode.
+Button theo ảnh MUI, giữ màu primary, không uppercase: contained có elevation,
+outlined viền primary, text có hover nhẹ; giữ bo góc 8px. Dùng primary cho hành
+động chính, outline cho hành động phụ, text cho Hủy/Sửa/điều hướng nhẹ.
+Textfield dùng nền dịu, viền mảnh và shadow nhẹ theo ảnh thứ hai; giữ bo góc
+8px, đồng bộ Light/Dark.
+Bấm repo trong sidebar mở trang riêng với hai tab Log (mặc định) và Terminal
+cùng các thao tác của đúng repo đó, không có Run/Stop toàn project. Theo dõi
+log chỉ cuộn vùng output. Trang project và repository không có ô chọn bộ cấu hình.
+Tab Terminal là shell tương tác thật (PowerShell trên Windows, login shell trên
+macOS) tại folder repo. Mỗi repo một shell, giữ nguyên khi đổi tab hoặc trang;
+đóng khi đổi folder hoặc thoát app. Đã gõ lệnh trong terminal thì thoát app sẽ
+hỏi lại. Terminal dùng palette đã chọn trong Settings.
+Repo có remote Git hiện nút Mở GitHub, Mở GitLab hoặc Mở trang repository tùy
+host; link dựng lại từ host và đường dẫn nên không mang theo token trong remote.
+Settings cho chọn font hệ thống, Be Vietnam Pro hoặc JetBrains Mono;
+áp dụng ngay, lưu trên máy và trong export/import JSON. Backup chưa có font giữ
+lựa chọn hiện tại khi restore. Log vẫn dùng monospace.
+Terminal có 4 palette: Tối (Midnight, mặc định và đứng đầu), Trắng, Dracula, Rose;
+giữ lựa chọn hợp lệ đã lưu. Theme Trắng dùng nền #ffffff kể cả khi app Dark.
+
+## Sắp xếp project và repository
+
+Trên cây project ở sidebar: kéo thả để đổi thứ tự project, đổi thứ tự repo hoặc
+thả repo vào project khác; chuột phải có Chuyển lên / Chuyển xuống / Chuyển
+sang project. Thứ tự được lưu trong cấu hình, áp dụng cho mọi danh sách và đi
+cùng export/backup. Repo đang chạy vẫn đổi được thứ tự trong project nhưng
+không chuyển sang project khác.
+
+## Thông báo
+
+Mọi thao tác báo bằng toast; trang project không còn hộp kết quả hay đoạn lỗi
+chen giữa nội dung. Lỗi và kết quả có chi tiết được giữ trong danh sách mở từ
+nút chuông trên header, dùng chung toàn app. Thông báo trùng gộp thành một mục
+kèm số lần; tối đa 200 mục, nội dung dài bị cắt bớt phần đầu. Không ghi ra đĩa
+nên đóng app là mất. Hộp thoại, form, tab Logs/Terminal vẫn hiện lỗi tại chỗ.
+
+## Tự điền khi chọn thư mục
+
+Đổi thư mục repo hoặc working directory thì form đề xuất Run command và Web URL:
+`package.json` (script dev/start, package manager theo lock file, port theo cờ
+trong script, config Vite, `PORT` trong `.env` hoặc mặc định của framework),
+project .NET (`dotnet run`, `launchSettings.json`) hoặc Docker Compose. Chỉ đọc
+tệp, không chạy lệnh; từ `.env` chỉ lấy số port. Giá trị bạn đã gõ được giữ
+nguyên; mở form sửa mà không đổi đường dẫn thì không thay đổi gì.
 
 ## Run và Git
 

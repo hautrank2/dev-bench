@@ -29,9 +29,12 @@
     "@hookform/resolvers": "^5.2.2",
     "@tanstack/react-query": "^5.90.0",
     "@tanstack/react-router": "^1.140.0",
+    "@xterm/addon-fit": "0.11.0",
+    "@xterm/xterm": "6.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.468.0",
+    "node-pty": "1.1.0",
     "radix-ui": "^1.4.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
@@ -78,8 +81,16 @@
       "dist-electron/**/*",
       "package.json",
       "!node_modules/**/*",
+      "node_modules/node-pty/package.json",
+      "node_modules/node-pty/lib/**/*.js",
+      "node_modules/node-pty/prebuilds/${platform}-${arch}/**/*",
+      "!node_modules/node-pty/**/*.{test.js,pdb}",
       "docs/licenses/**/*"
     ],
+    "asarUnpack": [
+      "node_modules/node-pty/**/*"
+    ],
+    "npmRebuild": false,
     "asar": true,
     "win": {
       "icon": "build/icon.ico",

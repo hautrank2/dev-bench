@@ -1,10 +1,13 @@
 import { contextBridge, ipcRenderer } from "electron";
 
 import type { DesktopApi } from "../shared/contracts";
+import type { ShellEvent } from "../shared/terminal";
 
 const api: DesktopApi = {
   setLanguage: (language) => ipcRenderer.invoke("settings:language", language),
   saveGroup: (input) => ipcRenderer.invoke("groups:save", input),
+  moveGroup: (input) => ipcRenderer.invoke("groups:move", input),
+  moveRepository: (input) => ipcRenderer.invoke("projects:move", input),
   runGroup: (id) => ipcRenderer.invoke("groups:run", id),
   stopGroup: (id) => ipcRenderer.invoke("groups:stop", id),
   ports: () => ipcRenderer.invoke("inspect:ports"),
@@ -30,6 +33,8 @@ const api: DesktopApi = {
   list: () => ipcRenderer.invoke("projects:list"),
   saveProject: (value) => ipcRenderer.invoke("projects:save", value),
   pickFolder: () => ipcRenderer.invoke("system:pick-folder"),
+  detectFolder: (request) =>
+    ipcRenderer.invoke("system:detect-folder", request),
   run: (id) => ipcRenderer.invoke("process:run", id),
   stop: (id) => ipcRenderer.invoke("process:stop", id),
   runAll: () => ipcRenderer.invoke("process:run-all"),
@@ -37,6 +42,15 @@ const api: DesktopApi = {
   copyPath: (id) => ipcRenderer.invoke("system:copy-path", id),
   openTerminal: (id) => ipcRenderer.invoke("system:terminal", id),
   openWeb: (id) => ipcRenderer.invoke("system:web", id),
+  openRemote: (id) => ipcRenderer.invoke("system:remote", id),
+  shellOpen: (request) => ipcRenderer.invoke("shell:open", request),
+  shellWrite: (request) => ipcRenderer.invoke("shell:write", request),
+  shellResize: (request) => ipcRenderer.invoke("shell:resize", request),
+  onShellEvent: (callback) => {
+    const listener = (_event: unknown, value: ShellEvent) => callback(value);
+    ipcRenderer.on("shell:event", listener);
+    return () => ipcRenderer.removeListener("shell:event", listener);
+  },
   gitStatus: (id) => ipcRenderer.invoke("git:status", id),
   stage: (request) => ipcRenderer.invoke("git:stage", request),
   commit: (request) => ipcRenderer.invoke("git:commit", request),

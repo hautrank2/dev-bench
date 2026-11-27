@@ -10,6 +10,8 @@ import {
   backupSchema,
   cloudSettingsSchema,
   cloudUrlSchema,
+  fromCloudBackup,
+  toCloudBackup,
   type Account,
   type Backup,
   type CloudStatus,
@@ -30,7 +32,11 @@ export class CloudService {
   constructor(
     private directory: string,
     private changed: () => void,
-  ) {}
+    defaultApiUrl = "",
+  ) {
+    if (defaultApiUrl)
+      this.apiUrl = new URL(cloudUrlSchema.parse(defaultApiUrl)).origin;
+  }
 
   private async write(file: string, data: string | Buffer) {
     await mkdir(this.directory, { recursive: true });
@@ -240,12 +246,12 @@ export class CloudService {
   async backup(snapshot: Backup) {
     const response = await this.request("/backups", {
       method: "POST",
-      body: JSON.stringify(snapshot),
+      body: JSON.stringify(toCloudBackup(snapshot)),
     });
     return backupInfoSchema.parse(await response.json());
   }
   async restore(id: string) {
     const response = await this.request(`/backups/${z.uuid().parse(id)}`);
-    return backupSchema.parse(await response.json());
+    return backupSchema.parse(fromCloudBackup(await response.json()));
   }
 }

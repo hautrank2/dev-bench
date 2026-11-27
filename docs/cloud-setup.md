@@ -6,6 +6,30 @@ phát hành độc lập và giao tiếp bằng HTTP contract hiện có.
 
 ## Dùng desktop
 
+### Đặt URL backend qua .env
+
+Tạo `.env` tại gốc repo desktop (cùng cấp `package.json`), hoặc copy `.env.example`.
+Chỉ điền origin công khai của backend:
+
+```dotenv
+DEV_BENCH_API_ORIGIN=https://devbench-acdndvcbhrhgbkeq.westus3-01.azurewebsites.net
+```
+
+Local có thể dùng `http://localhost:4318`. Không thêm `/api`, query hoặc fragment.
+Để trống nếu muốn cấu hình server thủ công trong Settings. Không điền Google
+Client Secret hoặc MongoDB URI vào FE.
+
+`pnpm dev` và `pnpm build` đọc biến này và nhúng riêng origin vào Electron main;
+request HTTP vẫn đi qua main/IPC. Sau khi sửa `.env`, khởi động lại `pnpm dev`
+hoặc build/đóng gói lại. File `.env` được Git bỏ qua và không được đóng gói.
+URL đã lưu qua **Save server** trong Settings được ưu tiên hơn default từ `.env`;
+thay `.env` không tự ghi đè lựa chọn server của người dùng.
+
+Loader hỗ trợ `.env.local` và `.env.[mode]` theo Vite; biến môi trường shell/CI
+có độ ưu tiên cao nhất. Chỉ `DEV_BENCH_API_ORIGIN` được chuyển vào main bundle.
+
+### Đăng nhập và backup
+
 1. Mở Settings → Account & backup.
 2. Điền **Backup server URL** là origin API rồi Save server. Local ví dụ
    `http://localhost:4318`; production dùng HTTPS. Không thêm `/api`.

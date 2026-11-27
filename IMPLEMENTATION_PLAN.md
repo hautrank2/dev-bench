@@ -1,5 +1,30 @@
 # Implementation Plan — DevBench
 
+## Thư mục chạy riêng cho repository (2026-11-26)
+
+- Thêm `workingDirectory` tùy chọn trong schema/form; trống dùng thư mục repo,
+  tương đối resolve từ repo, tuyệt đối dùng trực tiếp.
+- Run/Run All dùng cwd riêng và kiểm tra thư mục; khóa đổi cwd khi đang chạy.
+  Git/Copy Path/Open Terminal giữ thư mục repo. Preview restore kiểm tra cả hai.
+- Lưu trong cấu hình, JSON backup và chuẩn hóa cloud server; không đổi version.
+- Kiểm tra chạy thực tế, lỗi đường dẫn, persistence/form, build/test desktop,
+  restore/build/publish API; ghi giới hạn nghiệm thu UI và cloud thật.
+
+## Bỏ Card Image khỏi Project (2026-11-26)
+
+- Bỏ field ảnh trong form Thêm/Sửa Project, xử lý upload, schema và lưu ảnh.
+- Dọn style/bản dịch ảnh không còn dùng; cập nhật tài liệu và smoke script.
+- Giữ khả năng đọc cấu hình/backup cũ bằng cách bỏ qua trường ảnh.
+- Kiểm tra tương thích dữ liệu cũ, typecheck, test và production build.
+
+## URL backend mặc định từ .env (2026-11-26)
+
+- Tạo `.env` local được Git bỏ qua và `.env.example` chỉ có public API origin.
+- Dev/build dùng loader chung, chỉ nhúng `DEV_BENCH_API_ORIGIN` vào Electron main.
+- Cloud service dùng origin mặc định khi chưa có server được lưu trong Settings.
+- Kiểm tra default mới, ưu tiên server đã lưu, typecheck/test/build; không đưa
+  Google secret hoặc MongoDB credentials vào desktop.
+
 ## English / Tiếng Việt (2026-11-24)
 
 - English mặc định; thêm bộ chọn Language trong Settings, lưu lựa chọn trên máy.
@@ -146,7 +171,7 @@ src/
   api/api-list/           # lớp gọi bridge có kiểu dữ liệu
   components/ui/          # primitive shadcn
   components/projects/   # form project, modal commit, panel logs
-  routes/dashboard/      # dashboard, hook, type
+  app/_dashboard/      # dashboard, hook, type
   providers/             # Query/Context/theme
   lib/
   types/

@@ -54,7 +54,7 @@ export const Spin = ({
         width={size}
         height={size}
         viewBox={`0 0 ${size} ${size}`}
-        className={cn("text-primary shrink-0 -rotate-90", className)}
+        className={cn("text-primary-ink shrink-0 -rotate-90", className)}
         style={style}
       >
         <circle
@@ -78,7 +78,7 @@ export const Spin = ({
       role="status"
       aria-label={t(label)}
       className={cn(
-        "text-primary inline-block shrink-0 animate-spin rounded-full border-current border-t-transparent",
+        "text-primary-ink inline-block shrink-0 animate-spin rounded-full border-current border-t-transparent",
         className,
       )}
       style={{ width: size, height: size, borderWidth: border, ...style }}

@@ -29,12 +29,24 @@ import {
   cloudUrlSchema,
   setNameSchema,
   saveGroupSchema,
+  moveGroupSchema,
+  moveRepositorySchema,
   type Backup,
   type ImportPreview,
 } from "../shared/workspace";
+import {
+  shellOpenSchema,
+  shellResizeSchema,
+  shellWriteSchema,
+} from "../shared/terminal";
 import { GitService } from "./services/git";
+import { detectFolderSchema } from "../shared/detect";
+import { detectFolder } from "./services/detect";
+import { FolderMemory } from "./services/folder-memory";
 import { ProcessManager } from "./services/processes";
+import { runDirectory } from "./services/repository-directory";
 import { hydrateLoginPath, openTerminal } from "./services/system";
+import { TerminalManager } from "./services/terminals";
 import {
   findConfigFiles,
   inspectSystem,
@@ -57,6 +69,10 @@ const changed = () => {
 };
 const processes = new ProcessManager(changed);
 const git = new GitService(changed);
+const terminals = new TerminalManager((event) => {
+  if (window && !window.isDestroyed())
+    window.webContents.send("shell:event", event);
+});
 let store: ConfigStore;
 let cloud: CloudService;
 let locale: LocaleService;
@@ -103,6 +119,9 @@ const handle = <S extends z.ZodType, T>(
             "workspace:select",
             "workspace:create",
             "workspace:import",
+            "shell:open",
+            "groups:move",
+            "projects:move",
           ].includes(channel)
         ) {
           throw new Error(
@@ -117,6 +136,8 @@ const handle = <S extends z.ZodType, T>(
             "groups:run",
             "projects:save",
             "groups:save",
+            "groups:move",
+            "projects:move",
           ].includes(channel)
         ) {
           throw new Error("Project set is changing. Try again shortly.");
@@ -183,12 +204,19 @@ const registerActions = () => {
   };
   const preview = async (snapshot: Backup): Promise<ImportPreview> => {
     const checks = await Promise.all(
-      snapshot.set.repositories.map(async (project) => {
+      [
+        ...new Set(
+          snapshot.set.repositories.flatMap((project) => [
+            project.folder,
+            runDirectory(project),
+          ]),
+        ),
+      ].map(async (folder) => {
         try {
-          await assertFolder(project.folder);
+          await assertFolder(folder);
           return null;
         } catch {
-          return project.folder;
+          return folder;
         }
       }),
     );
@@ -205,6 +233,21 @@ const registerActions = () => {
     const group = await store.saveGroup(input);
     changed();
     return group;
+  });
+  handle("groups:move", moveGroupSchema, async (input) => {
+    await store.moveGroup(input);
+    changed();
+  });
+  handle("projects:move", moveRepositorySchema, async (input) => {
+    if (
+      processes.activeIds().includes(input.id) &&
+      store.get(input.id).groupId !== input.groupId
+    )
+      throw new Error(
+        "Stop this repository before moving it to another project.",
+      );
+    await store.moveRepository(input);
+    changed();
   });
   handle("groups:run", idSchema, (id) => {
     store.getGroup(id);
@@ -311,23 +354,33 @@ const registerActions = () => {
       const previous = store.get(payload.id);
       if (
         previous.folder !== path.resolve(payload.input.folder) ||
+        runDirectory(previous) !== runDirectory(payload.input) ||
         previous.command !== payload.input.command
       ) {
         throw new Error(
-          "Stop this project before changing its folder or run command.",
+          "Stop this repository before changing its folder, working directory or run command.",
         );
       }
     }
     const project = await store.save(payload);
+    await terminals.closeIfMoved(project);
     changed();
     return project;
   });
+  const browsed = new FolderMemory(
+    path.join(app.getPath("userData"), "last-folder.json"),
+  );
   handle("system:pick-folder", z.undefined(), async () => {
     const result = await dialog.showOpenDialog({
+      defaultPath: await browsed.recall(),
       properties: ["openDirectory"],
     });
-    return result.canceled ? null : (result.filePaths[0] ?? null);
+    const folder = result.canceled ? undefined : result.filePaths[0];
+    if (!folder) return null;
+    await browsed.remember(folder);
+    return folder;
   });
+  handle("system:detect-folder", detectFolderSchema, detectFolder);
   handle("process:run", idSchema, (id) => processes.run(store.get(id)));
   handle("process:stop", idSchema, (id) => processes.stop(store.get(id)));
   handle("process:run-all", z.undefined(), () =>
@@ -343,6 +396,24 @@ const registerActions = () => {
   handle("system:terminal", idSchema, (id) =>
     openTerminal(store.get(id).folder),
   );
+  handle("shell:open", shellOpenSchema, ({ id, ...options }) =>
+    terminals.open(store.get(id), options),
+  );
+  handle("shell:write", shellWriteSchema, ({ id, session, data }) =>
+    terminals.write(id, session, data),
+  );
+  handle("shell:resize", shellResizeSchema, ({ id, session, ...size }) =>
+    terminals.resize(id, session, size),
+  );
+  handle("system:remote", idSchema, async (id) => {
+    const project = store.get(id);
+    const { web } = await git.summary(project);
+    if (!web)
+      throw new Error(
+        `${project.name}: No web page was found for the Git remote.`,
+      );
+    await shell.openExternal(web.url);
+  });
   handle("system:web", idSchema, async (id) => {
     const project = store.get(id);
     if (!project.url)
@@ -365,15 +436,29 @@ const requestQuit = async () => {
   closing = true;
   try {
     const ids = processes.activeIds();
-    if (ids.length) {
+    const shells = terminals.usedCount();
+    if (ids.length || shells) {
       const { response } = await dialog.showMessageBox({
         type: "question",
-        title: nativeT("Projects are still running"),
-        message: nativeT("Stop all dashboard processes and quit?"),
-        detail: nativeT(
-          "Processes started outside DevBench will keep running.",
+        title: nativeT(
+          ids.length
+            ? "Projects are still running"
+            : "Terminals are still open",
         ),
-        buttons: [nativeT("Stop All and Quit"), nativeT("Cancel")],
+        message: nativeT(
+          ids.length
+            ? "Stop all dashboard processes and quit?"
+            : "Close all terminals and quit?",
+        ),
+        detail: nativeT(
+          shells
+            ? "Open terminals and the commands running in them will be closed."
+            : "Processes started outside DevBench will keep running.",
+        ),
+        buttons: [
+          nativeT(ids.length ? "Stop All and Quit" : "Close and Quit"),
+          nativeT("Cancel"),
+        ],
         defaultId: 1,
         cancelId: 1,
       });
@@ -402,6 +487,7 @@ const requestQuit = async () => {
         return;
       }
     }
+    await terminals.closeAll();
     quitting = true;
     cloud?.cancelSignIn();
     app.quit();
@@ -450,7 +536,11 @@ else {
             nativeT(errorMessage(error)),
           ),
         );
-      cloud = new CloudService(app.getPath("userData"), changed);
+      cloud = new CloudService(
+        app.getPath("userData"),
+        changed,
+        process.env.DEV_BENCH_API_ORIGIN ?? "",
+      );
       await cloud
         .load()
         .catch((error: unknown) =>

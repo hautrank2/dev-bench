@@ -1,5 +1,5 @@
 import { createServer } from "node:net";
-import { writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -161,5 +161,65 @@ describe("Windows process lifecycle", () => {
         .some((entry) => entry.text.includes("EADDRINUSE")),
     ).toBe(true);
     expect(manager.runtime(project.id).status).toBe("Running");
+  });
+
+  it.each(["omitted", "blank", "relative", "absolute"] as const)(
+    "runs in the expected directory with a %s working directory",
+    async (kind) => {
+      const folder = await fixture("working-directory");
+      const relative = path.join("apps", "dịch vụ có dấu");
+      const target =
+        kind === "relative"
+          ? path.join(folder, relative)
+          : kind === "absolute"
+            ? await fixture("external-working-directory")
+            : folder;
+      await mkdir(target, { recursive: true });
+      await writeFile(
+        path.join(target, "print-cwd.cjs"),
+        "console.log(process.cwd());",
+      );
+      const project = projectAt(folder, {
+        command: `"${process.execPath}" print-cwd.cjs`,
+        ...(kind === "omitted"
+          ? {}
+          : {
+              workingDirectory:
+                kind === "relative"
+                  ? relative
+                  : kind === "absolute"
+                    ? target
+                    : "  ",
+            }),
+      });
+      projects.push(project);
+      if (kind === "relative") {
+        const results = await manager.runAll([project]);
+        expect(results[0]?.outcome).toBe("Started");
+      } else await manager.run(project);
+      await until(() => manager.runtime(project.id).status === "Stopped");
+      expect(
+        manager
+          .logs(project.id)
+          .filter((entry) => entry.stream === "stdout")
+          .map((entry) => entry.text)
+          .join("")
+          .trim(),
+      ).toBe(target);
+    },
+  );
+
+  it("reports a missing working directory without falling back to the repo root", async () => {
+    const folder = await fixture("missing-working-directory");
+    const project = projectAt(folder, {
+      command: "pnpm --version",
+      workingDirectory: "missing",
+    });
+    projects.push(project);
+    await expect(manager.run(project)).rejects.toThrow(
+      path.join(folder, "missing"),
+    );
+    expect(manager.runtime(project.id).status).toBe("Failed");
+    expect(manager.runtime(project.id).pid).toBeUndefined();
   });
 });

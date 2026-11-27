@@ -4,8 +4,10 @@ import { realpath } from "node:fs/promises";
 import type {
   CommitRequest,
   GitFile,
+  GitRemoteWeb,
   GitSnapshot,
   GitSummary,
+  GitSync,
   Project,
 } from "../../shared/contracts";
 import { execute } from "./command";
@@ -35,6 +37,94 @@ export const parseStatus = (output: string): GitFile[] => {
     });
   }
   return files;
+};
+
+// SSH-only host names whose web pages live on another host.
+const WEB_HOSTS: Record<string, string> = {
+  "ssh.github.com": "github.com",
+  "altssh.gitlab.com": "gitlab.com",
+};
+const NO_WEB_PAGE = ["ssh.dev.azure.com", "vs-ssh.visualstudio.com"];
+
+/** Web page of a Git remote written in HTTPS, SSH or scp-like form. */
+export const remoteWeb = (remote: string): GitRemoteWeb | undefined => {
+  const value = remote.trim();
+  const scp = value.includes("://")
+    ? null
+    : /^(?:[^@/\\:]+@)?([^@/\\:]+):(.+)$/.exec(value);
+  let protocol = "https:";
+  let port = "";
+  let host = scp?.[1] ?? "";
+  let repository = scp?.[2] ?? "";
+  if (!scp) {
+    try {
+      const url = new URL(value);
+      if (!["https:", "http:", "ssh:", "git:"].includes(url.protocol))
+        return undefined;
+      // An SSH port says nothing about where the web server listens.
+      if (url.protocol === "https:" || url.protocol === "http:") {
+        protocol = url.protocol;
+        port = url.port && `:${url.port}`;
+      }
+      host = url.hostname;
+      repository = url.pathname;
+    } catch {
+      return undefined;
+    }
+  }
+  const name = host.toLowerCase();
+  const hostname = WEB_HOSTS[name] ?? name;
+  // A domain or IPv4 address: SSH aliases and drive letters are neither.
+  if (
+    !/^(?:(?:[a-z0-9-]+\.)+[a-z]{2,}|(?:\d{1,3}\.){3}\d{1,3})$/.test(
+      hostname,
+    ) ||
+    NO_WEB_PAGE.includes(hostname)
+  )
+    return undefined;
+  const parts = repository
+    .replace(/^\/+|\/+$/g, "")
+    .replace(/\.git$/i, "")
+    .split("/");
+  const provider =
+    hostname === "github.com"
+      ? "github"
+      : /(?:^|\.)gitlab\./.test(hostname)
+        ? "gitlab"
+        : "other";
+  if (
+    parts.length < 2 ||
+    (provider === "github" && parts.length > 2) ||
+    !parts.every((part) => /^[\w.~%-]+$/.test(part) && !/^\.+$/.test(part))
+  )
+    return undefined;
+  // Rebuilt from host and path only, so tokens and queries are dropped.
+  return {
+    provider,
+    url: `${protocol}//${hostname}${port}/${parts.join("/")}`,
+  };
+};
+
+// Windows caps a command line at 32,767 characters, so a large selection is
+// added in several calls. The margin covers the executable, flags and quoting.
+const MAX_PATHS_LENGTH = 24_000;
+
+export const pathBatches = (paths: string[], limit = MAX_PATHS_LENGTH) => {
+  const batches: string[][] = [];
+  let batch: string[] = [];
+  let length = 0;
+  for (const file of paths) {
+    const size = file.length + 3;
+    if (batch.length && length + size > limit) {
+      batches.push(batch);
+      batch = [];
+      length = 0;
+    }
+    batch.push(file);
+    length += size;
+  }
+  if (batch.length) batches.push(batch);
+  return batches;
 };
 
 const explainGitError = (error: unknown) => {
@@ -92,12 +182,55 @@ export class GitService {
     return { root, key, branch };
   }
 
+  // Prefers origin, then any other remote that has a web page.
+  private async web(root: string) {
+    const output = await git(root, ["remote", "-v"]).catch(() => "");
+    const remotes = output.split(/\r?\n/).flatMap((line) => {
+      const match = /^(\S+)\t(.+) \(fetch\)/.exec(line);
+      const web = match?.[2] ? remoteWeb(match[2]) : undefined;
+      return match && web ? [{ name: match[1], web }] : [];
+    });
+    return (remotes.find((item) => item.name === "origin") ?? remotes[0])?.web;
+  }
+
+  // Local refs only: DevBench never contacts the remote to read a status.
+  private async sync(root: string): Promise<GitSync | null> {
+    try {
+      const [upstream, counts] = await Promise.all([
+        git(root, [
+          "rev-parse",
+          "--abbrev-ref",
+          "--symbolic-full-name",
+          "@{upstream}",
+        ]),
+        git(root, [
+          "rev-list",
+          "--left-right",
+          "--count",
+          "@{upstream}...HEAD",
+        ]),
+      ]);
+      const [behind = 0, ahead = 0] = counts.trim().split(/\s+/).map(Number);
+      return { upstream: upstream.trim(), ahead, behind };
+    } catch {
+      return null;
+    }
+  }
+
   async summary(project: Project): Promise<GitSummary> {
     try {
       const { root, branch, key } = await this.location(project);
+      const [web, status, sync] = await Promise.all([
+        this.web(root),
+        git(root, ["status", "--porcelain=v1", "-z", "--untracked-files=all"]),
+        this.sync(root),
+      ]);
       return {
         root,
         branch,
+        sync,
+        changedFiles: parseStatus(status).length,
+        web,
         operation: this.locks.get(key),
         error: this.errors.get(key),
       };
@@ -112,7 +245,7 @@ export class GitService {
   }
 
   private async snapshotAt(root: string, branch: string): Promise<GitSnapshot> {
-    const [status, diff, head] = await Promise.all([
+    const [status, diff, head, sync] = await Promise.all([
       git(root, ["status", "--porcelain=v1", "-z", "--untracked-files=all"]),
       git(root, [
         "diff",
@@ -122,6 +255,7 @@ export class GitService {
         "--no-textconv",
       ]),
       git(root, ["rev-parse", "--verify", "HEAD"]).catch(() => "unborn"),
+      this.sync(root),
     ]);
     const files = parseStatus(status);
     const token = createHash("sha256")
@@ -129,7 +263,7 @@ export class GitService {
       .update(diff)
       .update(JSON.stringify(files.filter((file) => file.staged)))
       .digest("hex");
-    return { root, branch, files, token };
+    return { root, branch, files, token, sync };
   }
 
   async snapshot(project: Project) {
@@ -179,7 +313,8 @@ export class GitService {
           "Selected files changed. Refresh the file list and select them again.",
         );
       }
-      await git(root, ["--literal-pathspecs", "add", "--", ...paths]);
+      for (const batch of pathBatches(paths))
+        await git(root, ["--literal-pathspecs", "add", "--", ...batch]);
       return this.snapshotAt(root, branch);
     });
   }
